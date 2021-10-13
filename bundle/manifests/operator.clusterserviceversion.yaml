@@ -1,0 +1,261 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsConfig",
+          "metadata": {
+            "name": "gmaster"
+          },
+          "spec": {
+            "cfg": "IPCServer = 1\ndomainNum = 24\nforwardable = 0\ntwoStep = 0\npriority2 = 128\nsrcPPS = 1\nsrc10MHz = 1\nsynceRecClkPort = 0\nsyncOption = 1\nsynceCpu = 10\nswTimestamp = 0\ninbandMode = 1 \ndumpMode = 0\ngetRawTs = 0\ncountDelay = 0\ndataDelay = 0\nstatDelay = 0\naprLevel = 8\ntraceModule = 23\ntraceLevel = 8\ntracePtpMsg = 0\nwhenWriteLog = 0\ndebugAPI = 1\n",
+            "image": "quay.io/ryan_raasch/siltsync:1.2.0.1",
+            "interfaces": [
+              {
+                "function": 5,
+                "holdoff": 500,
+                "mode": 2,
+                "slot": 0,
+                "synce": true,
+                "up": true
+              },
+              {
+                "function": 0,
+                "holdoff": 500,
+                "mode": 2,
+                "slot": 0,
+                "synce": true,
+                "up": true
+              }
+            ],
+            "name": "gmaster",
+            "nodeSelector": {
+              "sts.silicom.com/mode-2": "saf"
+            },
+            "podAnnotation": {
+              "sts.silicom.com/mode-2": "asdf"
+            },
+            "runCfg": "net_id=1591\ndelay=10\nlane_map=8\nbcm_port_mask=0xff\nnum_ports_10G=8\nnum_ports_25G=4\n"
+          }
+        },
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsDeviceNode",
+          "metadata": {
+            "name": "stsdevicenode-sample"
+          },
+          "spec": {
+            "foo": "bar"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: StsConfig is the Schema for the stsconfigs API
+      displayName: Sts Config
+      kind: StsConfig
+      name: stsconfigs.sts.silicom.com
+      version: v1alpha1
+    - description: StsDeviceNode is the Schema for the stsdevicenodes API
+      displayName: Sts Device Node
+      kind: StsDeviceNode
+      name: stsdevicenodes.sts.silicom.com
+      version: v1alpha1
+  description: handles silicom sts ptp pci cards
+  displayName: sts-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsconfigs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsdevicenodes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsdevicenodes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsdevicenodes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: operator-controller-manager
+      deployments:
+      - name: operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources: {}
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: quay.io/silicom/sts-operator:0.0.1
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - sts
+  - silicom
+  - ptp
+  links:
+  - name: Operator
+    url: https://operator.domain
+  maturity: alpha
+  provider:
+    name: Silicom
+  version: 0.0.1

@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- sts_v1alpha1_stsdevicenode.yaml
+- sts_v1alpha1_stsconfig.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

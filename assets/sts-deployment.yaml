@@ -1,0 +1,264 @@
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Name }}
+  namespace: {{.Namespace}}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{.Name}}
+  namespace: {{.Namespace}}
+rules:
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{.Name}}
+  namespace: {{.Namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{.Name}}
+subjects:
+- kind: ServiceAccount
+  name: {{.Name}}
+  namespace: {{.Namespace}}
+
+---
+
+{{ if .EnableGPS}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.Name}}-gpsd-entrypoint
+  namespace: {{ .Namespace }}
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+
+    tty=`ls /sys/class/tty | grep ACM | tail -n 1`
+
+    stty -F /dev/$tty ispeed 9600
+    echo -e -n  '\xB5\x62\x06\x02\x0A\x00\x00\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\x00\x0D\xD2' > /dev/$tty
+
+    echo "gpsd -n -N /dev/$tty"
+    gpsd -n -N /dev/$tty -p /tmp/gpsd.pid &> /tmp/gpsd.log &
+    sleep 10
+    ubxtool -e NMEA
+    nc -lk 0.0.0.0 8888
+---
+{{end}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.Name}}-siltsync-entrypoint
+  namespace: {{ .Namespace }}
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+{{ if eq .Mode "master" }}
+    while ! nc -z 0.0.0.0 8888; do
+        echo "Waiting for gpsd"
+        sleep 3;
+    done
+{{end}}
+
+{{ if eq .Mode "boundaryClock" }}
+    if [ -e /etc/tsyncd/UC02_STS2r2_min.mfg ]
+    then
+      /usr/bin/plltool -l /etc/tsyncd/UC02_STS2r2_min.mfg
+      /usr/bin/plltool -i
+    fi
+{{end}}
+
+    /usr/bin/tsyncd -f
+    tail -f /var/log/tsyncd.log
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.Name}}-siltsync-conf
+  namespace: {{ .Namespace }}
+data:
+  tsyncd.conf: |
+{{ if eq .Mode "master"}}
+    profileID = 2
+{{end}}
+{{ if eq .Mode "boundaryClock"}}
+    profileID = 1
+{{end}}
+{{ range $i, $dev := .Interfaces }}
+    nicStr{{$i}} = {{$dev}}
+    qlEnable{{$i}} = 1
+    holdOff{{$i}} = 500
+{{end}}
+    phyLedsCtl = 0
+    IPCServer = 1
+    domainNum = 24
+    forwardable = 0
+    twoStep = 0
+    priority2 = 128
+    srcPPS = 1
+    src10MHz = 1
+    synceRecClkPort = 0
+    syncOption = 1
+    synceCpu = 10
+    swTimestamp = 0
+    inbandMode = 1 
+    dumpMode = 0
+    getRawTs = 0
+    countDelay = 0
+    dataDelay = 0
+    statDelay = 0
+    aprLevel = 8
+    traceModule = 23
+    traceLevel = 8
+    tracePtpMsg = 0
+    whenWriteLog = 0
+    debugAPI = 1
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.Name}}-siltsync-run-cfg
+  namespace: {{ .Namespace }}
+data:
+  tsyncd-run.cfg: |
+    net_id=1591
+    delay=10
+    lane_map=8
+    bcm_port_mask=0xff
+    num_ports_10G=8
+    num_ports_25G=4
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: {{ .Name }}
+  name: {{ .Name }}
+  namespace: {{ .Namespace }}
+  annotations:
+    openshift.io/scc: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Name }}
+  template:
+    metadata:
+      # Mark this pod as a critical add-on; when enabled, the critical add-on scheduler
+      # reserves resources for critical add-on pods so that they can be rescheduled after
+      # a failure.  This annotation works in tandem with the toleration below.
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: {{ .Name }}
+    spec:
+      nodeSelector:
+        feature.node.kubernetes.io/usb-ff_1374_0001.present: "true"
+      serviceAccount: {{ .Name }}
+      hostNetwork: true
+      containers:
+      - image: {{ .SilTsyncImage }}
+        command: [ "/bin/entrypoint.sh" ]
+        imagePullPolicy: Always
+        name: {{ .Name }}-siltsync
+        args:
+        - --zap-log-level=10
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
+          - name: sysfs
+            mountPath: /sys
+          - name: {{.Name}}-siltsync-conf
+            mountPath: /etc/tsyncd/tsyncd.conf
+            subPath: tsyncd.conf
+          - name: {{.Name}}-siltsync-run-cfg
+            mountPath: /etc/tsyncd/tsyncd-run.cfg
+            subPath: tsyncd-run.cfg
+          - name: {{.Name}}-siltsync-entrypoint
+            mountPath: /bin/entrypoint.sh
+            subPath: entrypoint.sh
+        securityContext:
+          privileged: true
+{{ if .EnableGPS }}
+      - image: {{ .SilTsyncImage }}
+        command: [ "/bin/entrypoint.sh" ]
+        imagePullPolicy: Always
+        name: {{ .Name }}-gpsd
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
+          - name: sysfs
+            mountPath: /sys
+          - name: {{.Name}}-gpsd-entrypoint
+            mountPath: /bin/entrypoint.sh
+            subPath: entrypoint.sh
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: false
+          seLinuxOptions:
+            level: "s0"
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+{{end}}
+      volumes:
+        - name: devfs
+          hostPath:
+            path: /dev
+        - name: sysfs
+          hostPath:
+            path: /sys
+        - name: {{.Name}}-siltsync-conf
+          configMap:
+            defaultMode: 0700
+            name: {{.Name}}-siltsync-conf
+        - name: {{.Name}}-siltsync-run-cfg
+          configMap:
+            defaultMode: 0700
+            name: {{.Name}}-siltsync-run-cfg
+        - name: {{.Name}}-siltsync-entrypoint
+          configMap:
+            defaultMode: 0700
+            name: {{.Name}}-siltsync-entrypoint
+{{ if .EnableGPS }}
+        - name: {{.Name}}-gpsd-entrypoint
+          configMap:
+            defaultMode: 0700
+            name: {{.Name}}-gpsd-entrypoint
+{{end}}

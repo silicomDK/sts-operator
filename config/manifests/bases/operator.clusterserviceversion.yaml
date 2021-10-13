@@ -1,0 +1,51 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: StsConfig is the Schema for the stsconfigs API
+      displayName: Sts Config
+      kind: StsConfig
+      name: stsconfigs.sts.silicom.com
+      version: v1alpha1
+    - description: StsDeviceNode is the Schema for the stsdevicenodes API
+      displayName: Sts Device Node
+      kind: StsDeviceNode
+      name: stsdevicenodes.sts.silicom.com
+      version: v1alpha1
+  description: handles silicom sts ptp pci cards
+  displayName: sts-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - sts
+  - silicom
+  - ptp
+  links:
+  - name: Operator
+    url: https://operator.domain
+  maturity: alpha
+  provider:
+    name: Silicom
+  version: 0.0.0
