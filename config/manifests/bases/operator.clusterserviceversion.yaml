@@ -10,15 +10,15 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: StsConfig is the Schema for the stsconfigs API
-      displayName: Sts Config
-      kind: StsConfig
-      name: stsconfigs.sts.silicom.com
-      version: v1alpha1
     - description: StsDeviceNode is the Schema for the stsdevicenodes API
       displayName: Sts Device Node
       kind: StsDeviceNode
       name: stsdevicenodes.sts.silicom.com
+      version: v1alpha1
+    - description: StsConfig is the Schema for the stsconfigs API
+      displayName: Sts Config
+      kind: StsConfig
+      name: stsconfigs.sts.silicom.com
       version: v1alpha1
   description: handles silicom sts ptp pci cards
   displayName: sts-operator

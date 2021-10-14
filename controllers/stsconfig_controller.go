@@ -19,7 +19,6 @@ package controllers
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"regexp"
@@ -45,11 +44,11 @@ type StsConfigReconciler struct {
 }
 
 type StsConfig struct {
-	Mode       string
-	Interfaces []string
-	EnableGPS  bool
-	Name       string
-	//NodeLabel     map[string]string
+	Mode          string
+	Interfaces    []string
+	EnableGPS     bool
+	Name          string
+	NodeSelector  string
 	SilTsyncImage string
 	Namespace     string
 }
@@ -106,7 +105,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		[]string{"enp2s0f1", "enp2s0f2", "enp2s0f3"},
 		true,
 		"sts1",
-		//"feature.node.kubernetes.io/usb-ff_1374_0001.present": "",
+		"mode.sts.silicom.com/gm",
 		"quay.io/silicom/siltsync:1.2.0.1",
 		req.Namespace}
 	t, err := template.New("asset").Option("missingkey=error").Parse(string(content))
@@ -135,7 +134,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 
-		reqLogger.Info(fmt.Sprintf("---->%s: parsed", obj.GetName()))
 		objects = append(objects, &obj)
 	}
 

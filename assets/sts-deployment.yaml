@@ -143,7 +143,7 @@ data:
     traceLevel = 8
     tracePtpMsg = 0
     whenWriteLog = 0
-    debugAPI = 1
+    debugAPI = 0
 
 ---
 
@@ -162,6 +162,23 @@ data:
     num_ports_25G=4
 
 ---
+
+{{ if .EnableGPS }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Name}}-gpsd-svc
+  namespace: {{.Namespace}}
+spec:
+  selector:
+    app: {{ .Name }}
+  ports:
+    - protocol: TCP
+      port: 2947
+      targetPort: 2947
+
+---
+{{end}}
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -187,7 +204,7 @@ spec:
         app: {{ .Name }}
     spec:
       nodeSelector:
-        feature.node.kubernetes.io/usb-ff_1374_0001.present: "true"
+        {{.nodeSelector}}: ""
       serviceAccount: {{ .Name }}
       hostNetwork: true
       containers:

@@ -201,3 +201,9 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+discovery:
+	cd sts-discovery && docker build . -t quay.io/silicom/sts-discovery:0.0.1
+
+discovery-push:
+	docker push quay.io/silicom/sts-discovery:0.0.1
