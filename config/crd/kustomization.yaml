@@ -2,7 +2,6 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/sts.silicom.com_stsdevicenodes.yaml
 - bases/sts.silicom.com_stsconfigs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 

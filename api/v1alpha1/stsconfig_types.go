@@ -31,17 +31,11 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Pattern=[a-z0-9\.\-]+
 	Name string `json:"name"`
 
-	Interfaces []StsInterfaceSpec `json:"interfaces"`
+	Interfaces   []StsInterfaceSpec `json:"interfaces"`
+	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
 
-	Cfg string `json:"cfg,omitempty"`
-
-	RunCfg string `json:"runCfg,omitempty"`
-
-	Image string `json:"image"`
-
-	NodeSelector map[string]string `json:"nodeSelector"`
-
-	PodAnnotation map[string]string `json:"podAnnotation"`
+	Mode      string `json:"mode"`
+	Namespace string `json:"namespace"`
 }
 
 // StsConfigStatus defines the observed state of StsConfig
@@ -72,12 +66,9 @@ type StsConfigList struct {
 }
 
 type StsInterfaceSpec struct {
-	Slot     int  `json:"slot"`
-	Function int  `json:"function"`
-	Mode     int  `json:"mode"`
-	SyncE    bool `json:"synce"`
-	HoldOff  int  `json:"holdoff"`
-	Up       bool `json:"up"`
+	EthName string `json:"ethName"`
+	SyncE   bool   `json:"synce"`
+	HoldOff int    `json:"holdoff"`
 }
 
 func init() {

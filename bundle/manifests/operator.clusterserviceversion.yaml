@@ -8,47 +8,54 @@ metadata:
           "apiVersion": "sts.silicom.com/v1alpha1",
           "kind": "StsConfig",
           "metadata": {
-            "name": "gmaster"
+            "name": "bc-1"
           },
           "spec": {
-            "cfg": "IPCServer = 1\ndomainNum = 24\nforwardable = 0\ntwoStep = 0\npriority2 = 128\nsrcPPS = 1\nsrc10MHz = 1\nsynceRecClkPort = 0\nsyncOption = 1\nsynceCpu = 10\nswTimestamp = 0\ninbandMode = 1 \ndumpMode = 0\ngetRawTs = 0\ncountDelay = 0\ndataDelay = 0\nstatDelay = 0\naprLevel = 8\ntraceModule = 23\ntraceLevel = 8\ntracePtpMsg = 0\nwhenWriteLog = 0\ndebugAPI = 1\n",
-            "image": "quay.io/ryan_raasch/siltsync:1.2.0.1",
             "interfaces": [
               {
-                "function": 5,
+                "ethName": "enp2s0f2",
                 "holdoff": 500,
-                "mode": 2,
-                "slot": 0,
-                "synce": true,
-                "up": true
+                "synce": true
               },
               {
-                "function": 0,
+                "ethName": "enp2s0f3",
                 "holdoff": 500,
-                "mode": 2,
-                "slot": 0,
-                "synce": true,
-                "up": true
+                "synce": true
               }
             ],
-            "name": "gmaster",
+            "mode": "bc",
+            "name": "bc-1",
+            "namespace": "bc-1",
             "nodeSelector": {
-              "sts.silicom.com/mode-2": "saf"
-            },
-            "podAnnotation": {
-              "sts.silicom.com/mode-2": "asdf"
-            },
-            "runCfg": "net_id=1591\ndelay=10\nlane_map=8\nbcm_port_mask=0xff\nnum_ports_10G=8\nnum_ports_25G=4\n"
+              "mode.sts.silicom.com/bc-1": ""
+            }
           }
         },
         {
           "apiVersion": "sts.silicom.com/v1alpha1",
-          "kind": "StsDeviceNode",
+          "kind": "StsConfig",
           "metadata": {
-            "name": "stsdevicenode-sample"
+            "name": "gm-1"
           },
           "spec": {
-            "foo": "bar"
+            "interfaces": [
+              {
+                "ethName": "enp2s0f0",
+                "holdoff": 500,
+                "synce": true
+              },
+              {
+                "ethName": "enp2s0f1",
+                "holdoff": 500,
+                "synce": true
+              }
+            ],
+            "mode": "gm",
+            "name": "gm-1",
+            "namespace": "gm-1",
+            "nodeSelector": {
+              "mode.sts.silicom.com/gm-1": ""
+            }
           }
         }
       ]
@@ -65,11 +72,6 @@ spec:
       displayName: Sts Config
       kind: StsConfig
       name: stsconfigs.sts.silicom.com
-      version: v1alpha1
-    - description: StsDeviceNode is the Schema for the stsdevicenodes API
-      displayName: Sts Device Node
-      kind: StsDeviceNode
-      name: stsdevicenodes.sts.silicom.com
       version: v1alpha1
   description: handles silicom sts ptp pci cards
   displayName: sts-operator

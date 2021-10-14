@@ -13,15 +13,6 @@ resources:
   controller: true
   domain: silicom.com
   group: sts
-  kind: StsDeviceNode
-  path: github.com/silicomdk/sts-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: silicom.com
-  group: sts
   kind: StsConfig
   path: github.com/silicomdk/sts-operator/api/v1alpha1
   version: v1alpha1

@@ -1,7 +1,0 @@
-apiVersion: sts.silicom.com/v1alpha1
-kind: StsDeviceNode
-metadata:
-  name: stsdevicenode-sample
-spec:
-  # Add fields here
-  foo: bar
