@@ -98,7 +98,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	for _, stsConfig := range stsConfigList.Items {
 
 		nodeList := &v1.NodeList{}
-		err := r.List(ctx, nodeList, &client.MatchingLabels{"mode.sts.silicom.com/gm-1": ""})
+		err := r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
 		if err != nil {
 			if errors.IsNotFound(err) {
 				reqLogger.Error(err, "NOT FOUND: Reconciling StsConfig")
@@ -186,6 +186,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // syncStsConfig synchronizes StsConfig CR
 func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *stsv1alpha1.StsConfigList, nodeList *corev1.NodeList) error {
 
+	fmt.Println("-------------------------------------------------------->syncStsConfig")
 	return nil
 }
 
