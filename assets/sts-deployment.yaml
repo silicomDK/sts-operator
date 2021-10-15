@@ -138,6 +138,13 @@ data:
 {{end}}
 
     /usr/bin/tsyncd -f
+
+    #
+    # HACK!!!! Why does this have to be done?!?!
+    #
+    sleep 30
+    echo exit | tsynctl
+
     tail -f /var/log/tsyncd.log
 
 ---
@@ -240,6 +247,7 @@ spec:
       labels:
         app: {{.Spec.Name}}-{{.NodeName}}
     spec:
+      shareProcessNamespace: true
       nodeSelector:
         kubernetes.io/hostname: {{.NodeName}}
       serviceAccount: {{.Spec.Name}}
@@ -258,6 +266,12 @@ spec:
             subPath: entrypoint.sh
         securityContext:
           privileged: true
+      - image: quay.io/silicom/grpc-tsyncd:1.2.0.1
+        imagePullPolicy: Always
+        name: {{.Spec.Name}}-{{.NodeName}}-grpc-tsyncd
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
       - image: quay.io/silicom/siltsync:1.2.0.1
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
