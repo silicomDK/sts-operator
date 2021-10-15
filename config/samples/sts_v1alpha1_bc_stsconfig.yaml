@@ -1,0 +1,18 @@
+apiVersion: sts.silicom.com/v1alpha1
+kind: StsConfig
+metadata:
+  name: bc-1
+spec:
+  name: bc-1
+  nodeSelector:
+    mode.sts.silicom.com/bc-1: ""
+  mode: bc
+  namespace: bc-1
+  interfaces:
+    - ethName: enp2s0f2
+      synce: true
+      holdoff: 500
+    - ethName: enp2s0f3
+      synce: true
+      holdoff: 500
+
