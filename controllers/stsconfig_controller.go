@@ -98,7 +98,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	for _, stsConfig := range stsConfigList.Items {
 
 		nodeList := &v1.NodeList{}
-		err := r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
+		err := r.List(ctx, nodeList, client.MatchingLabels(map[string]string{"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present": "true"}))
 		if err != nil {
 			if errors.IsNotFound(err) {
 				reqLogger.Error(err, "NOT FOUND: Reconciling StsConfig")
@@ -142,24 +142,14 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			for _, obj := range objects {
-				reqLogger.Info("create or update")
-
-				/*		err := a.setOwner(o, obj, s)
-						if err != nil {
-							return ctrl.Result{}, err
-						}*/
+				reqLogger.Info(fmt.Sprintf("Create or update: %v\n", obj))
 
 				gvk := obj.GetObjectKind().GroupVersionKind()
 				old := &unstructured.Unstructured{}
 				old.SetGroupVersionKind(gvk)
 				key := client.ObjectKeyFromObject(obj)
 				if err := r.Get(ctx, key, old); err != nil {
-					/*			if !errors.IsNotFound(err) {
-									reqLogger.Error(err, "ERROR7: Reconciling StsConfig")
-									return ctrl.Result{}, err
-								}
-					*/
-					// Object does not exist
+
 					if err := r.Create(ctx, obj); err != nil {
 						reqLogger.Error(err, "Create failed", "key", key, "GroupVersionKind", gvk)
 						return ctrl.Result{}, err
@@ -192,7 +182,9 @@ func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&stsv1alpha1.StsConfig{}).
-		Complete(r)
+	ctrl.NewControllerManagedBy(mgr). // Create the Controller
+						For(&stsv1alpha1.StsConfig{}). // StsConfig is the Application API
+						Owns(&v1.Pod{}).               // StsConfig owns Pods created by it
+						Complete(r)
+	return nil
 }

@@ -109,7 +109,7 @@ data:
     echo "gpsd --nowait --foreground /dev/$tty --listenany --passive --pidfile /tmp/gpsd.pid &> /tmp/gpsd.log"
     gpsd --nowait --foreground /dev/$tty --listenany --passive --pidfile /tmp/gpsd.pid &> /tmp/gpsd.log &
     sleep 10
-    ubxtool -e NMEA
+    # ubxtool -e NMEA NO PYTHON
     nc -lk 0.0.0.0 8888
 ---
 {{end}}
@@ -129,20 +129,18 @@ data:
     done
 {{end}}
 
-{{ if eq .Spec.Mode "bc" }}
-    if [ -e /etc/tsyncd/UC02_STS2r2_min.mfg ]
-    then
-      /usr/bin/plltool -l /etc/tsyncd/UC02_STS2r2_min.mfg
-      /usr/bin/plltool -i
-    fi
-{{end}}
+    /usr/bin/plltool -l /etc/tsyncd/STS2.mfg
+    /usr/bin/plltool -i
 
     /usr/bin/tsyncd -f
 
     #
     # HACK!!!! Why does this have to be done?!?!
     #
-    sleep 30
+    while ! $(grep -q "IPC Server thread" /var/log/tsyncd.log); do
+      sleep 5
+    done
+
     echo exit | tsynctl
 
     tail -f /var/log/tsyncd.log
@@ -214,7 +212,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.Spec.Name}}-{{.NodeName}}-svc
+  name: {{.Spec.Name}}-{{.NodeName}}-gpsd-svc
   namespace: {{.Spec.Namespace}}
 spec:
   selector:
@@ -226,6 +224,22 @@ spec:
 
 ---
 {{end}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Spec.Name}}-{{.NodeName}}-tsyncd-svc
+  namespace: {{.Spec.Namespace}}
+spec:
+  selector:
+    app: {{.Spec.Name}}-{{.NodeName}}
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
+
+---
+
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -250,6 +264,15 @@ spec:
       shareProcessNamespace: true
       nodeSelector:
         kubernetes.io/hostname: {{.NodeName}}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: mode.sts.silicom.com/gm-1
+                operator: In
+                values:
+                - ""
       serviceAccount: {{.Spec.Name}}
       hostNetwork: true
       containers:
@@ -269,6 +292,9 @@ spec:
       - image: quay.io/silicom/grpc-tsyncd:1.2.0.1
         imagePullPolicy: Always
         name: {{.Spec.Name}}-{{.NodeName}}-grpc-tsyncd
+        ports:
+        - containerPort: 50051
+          name: tsyncd-svc
         volumeMounts:
           - name: devfs
             mountPath: /dev
