@@ -212,9 +212,10 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.Spec.Name}}-{{.NodeName}}-gpsd-svc
+  name: gpsd-svc
   namespace: {{.Spec.Namespace}}
 spec:
+  type: NodePort
   selector:
     app: {{.Spec.Name}}-{{.NodeName}}
   ports:
@@ -228,9 +229,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.Spec.Name}}-{{.NodeName}}-tsyncd-svc
+  name: tsyncd-svc
   namespace: {{.Spec.Namespace}}
 spec:
+  type: NodePort
   selector:
     app: {{.Spec.Name}}-{{.NodeName}}
   ports:
@@ -267,13 +269,12 @@ spec:
 {{ range $k, $v := .Spec.NodeSelector }}
         {{ $k }}:{{ $v }}
 {{ end }}
-        mode.sts.silicom.com/gm-1: ""
       serviceAccount: {{.Spec.Name}}
       hostNetwork: true
       containers:
       - image: quay.io/ryan_raasch/phc2sys:latest
         command: [ "/bin/entrypoint.sh" ]
-        name: {{.Spec.Name}}-phc2sys
+        name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always
         network_mode: host
         volumeMounts:
@@ -286,7 +287,12 @@ spec:
           privileged: true
       - image: quay.io/silicom/grpc-tsyncd:1.2.0.1
         imagePullPolicy: Always
-        name: {{.Spec.Name}}-{{.NodeName}}-grpc-tsyncd
+        name: {{.NodeName}}-grpc-tsyncd
+        livenessProbe:
+          tcpSocket:
+            port: 50051
+          initialDelaySeconds: 60
+          periodSeconds: 10
         ports:
         - containerPort: 50051
           name: tsyncd-svc
@@ -296,7 +302,7 @@ spec:
       - image: quay.io/silicom/siltsync:1.2.0.1
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
-        name: {{.Spec.Name}}-{{.NodeName}}-siltsync
+        name: {{.NodeName}}-siltsync
         args:
         - --zap-log-level=10
         volumeMounts:
@@ -319,7 +325,12 @@ spec:
       - image: quay.io/silicom/siltsync:1.2.0.1
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
-        name: {{.Spec.Name}}-{{.NodeName}}-gpsd
+        name: {{.NodeName}}-gpsd
+        livenessProbe:
+          tcpSocket:
+            port: 2947
+          initialDelaySeconds: 60
+          periodSeconds: 10
         ports:
         - containerPort: 2947
           name: gpsd-svc
