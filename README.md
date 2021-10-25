@@ -1,7 +1,6 @@
 # Silicom STS Operator
 ![alt text](spec/sts-operator.png "STS Overview")
 ## Table of Contents
-- [PTP Operator](#ptp-operator)
-- [PtpOperatorConfig](#ptpoperatorconfig)
-- [PtpConfig](#ptpconfig)
+- [STS Operator](#sts-operator)
+- [StsConfig](#stsconfig)
 - [Quick Start](#quick-start)
