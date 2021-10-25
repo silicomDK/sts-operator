@@ -1,13 +1,4 @@
 ---
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{.Spec.Name}}
-  namespace: {{.Spec.Namespace}}
-
----
-
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -288,6 +279,11 @@ spec:
       - image: quay.io/silicom/grpc-tsyncd:1.2.0.1
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
+        readinessProbe:
+          tcpSocket:
+            port: 50051
+          initialDelaySeconds: 15
+          periodSeconds: 30
         livenessProbe:
           tcpSocket:
             port: 50051
@@ -326,6 +322,11 @@ spec:
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
+        readinessProbe:
+          tcpSocket:
+            port: 2947
+          initialDelaySeconds: 15
+          periodSeconds: 30
         livenessProbe:
           tcpSocket:
             port: 2947
