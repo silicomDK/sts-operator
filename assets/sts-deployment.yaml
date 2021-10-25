@@ -262,17 +262,12 @@ spec:
         app: {{.Spec.Name}}-{{.NodeName}}
     spec:
       shareProcessNamespace: true
+      nodeName: {{.NodeName}}
       nodeSelector:
-        kubernetes.io/hostname: {{.NodeName}}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: mode.sts.silicom.com/gm-1
-                operator: In
-                values:
-                - ""
+{{ range $k, $v := .Spec.NodeSelector }}
+        {{ $k }}:{{ $v }}
+{{ end }}
+        mode.sts.silicom.com/gm-1: ""
       serviceAccount: {{.Spec.Name}}
       hostNetwork: true
       containers:

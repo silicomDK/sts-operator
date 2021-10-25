@@ -27,7 +27,7 @@ import (
 
 	"github.com/go-logr/logr"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -174,9 +174,8 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // syncStsConfig synchronizes StsConfig CR
-func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *stsv1alpha1.StsConfigList, nodeList *corev1.NodeList) error {
+func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *stsv1alpha1.StsConfigList, nodeList *v1.NodeList) error {
 
-	fmt.Println("-------------------------------------------------------->syncStsConfig")
 	return nil
 }
 
@@ -184,7 +183,7 @@ func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *
 func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	ctrl.NewControllerManagedBy(mgr). // Create the Controller
 						For(&stsv1alpha1.StsConfig{}). // StsConfig is the Application API
-						Owns(&v1.Pod{}).               // StsConfig owns Pods created by it
+						Owns(&appsv1.DaemonSet{}).     // StsConfig owns Daemonsets created by it
 						Complete(r)
 	return nil
 }
