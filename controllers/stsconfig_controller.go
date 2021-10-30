@@ -17,16 +17,21 @@ limitations under the License.
 package controllers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"net"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
+	pb "github.com/silicomdk/sts-grpc/tsynctl"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
+	grpc "google.golang.org/grpc"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -48,8 +53,9 @@ type StsConfigReconciler struct {
 
 type StsConfigTemplate struct {
 	*stsv1alpha1.StsConfig
-	NodeName  string
-	EnableGPS bool
+	NodeName      string
+	EnableGPS     bool
+	ServicePrefix string
 }
 
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -76,22 +82,20 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	err := r.List(ctx, stsConfigList)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Error(err, "NOT FOUND: Reconciling StsConfig")
 			return ctrl.Result{}, nil
 		}
-		reqLogger.Error(err, "NOT FOUND2: Reconciling StsConfig")
+		reqLogger.Error(err, "Can't retrieve StsConfigList")
 		return ctrl.Result{}, err
 	}
 
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
 	if err != nil {
-		reqLogger.Error(err, "ERROR1: Reconciling StsConfig")
+		reqLogger.Error(err, "Loading sts-deployment.yaml file")
 		return ctrl.Result{}, err
 	}
 
 	t, err := template.New("asset").Option("missingkey=error").Parse(string(content))
 	if err != nil {
-		reqLogger.Error(err, "ERROR2: Reconciling StsConfig")
 		return ctrl.Result{}, err
 	}
 
@@ -101,27 +105,28 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		err := r.List(ctx, nodeList, client.MatchingLabels(map[string]string{"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present": "true"}))
 		if err != nil {
 			if errors.IsNotFound(err) {
-				reqLogger.Error(err, "NOT FOUND: Reconciling StsConfig")
 				return ctrl.Result{}, nil
 			}
-			reqLogger.Error(err, "NOT FOUND2: Reconciling StsConfig")
+			reqLogger.Error(err, "Can't retreive NodeList")
 			return ctrl.Result{}, err
 		}
 
+		statusList := stsv1alpha1.StsConfigStatus{}
 		cfgTemplate := &StsConfigTemplate{}
 		for _, node := range nodeList.Items {
 
 			var buff bytes.Buffer
 
-			reqLogger.Info(fmt.Sprintf("NODE: %s", node.Name))
+			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s", node.Name))
 
 			cfgTemplate.EnableGPS = stsConfig.Spec.Mode == "gm"
 			cfgTemplate.NodeName = node.Name
 			cfgTemplate.StsConfig = &stsConfig
+			cfgTemplate.ServicePrefix = node.Name
 
 			err = t.Execute(&buff, cfgTemplate)
 			if err != nil {
-				reqLogger.Error(err, "ERROR3: Reconciling StsConfig")
+				reqLogger.Error(err, "Template execute failure")
 				return ctrl.Result{}, err
 			}
 
@@ -134,7 +139,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
 				err := decoder.Decode(&obj)
 				if err != nil {
-					reqLogger.Error(err, "ERROR4: Reconciling StsConfig")
+					reqLogger.Error(err, "Decoding YAML failure")
 					return ctrl.Result{}, err
 				}
 
@@ -142,14 +147,11 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			for _, obj := range objects {
-				reqLogger.Info(fmt.Sprintf("Create or update: %v\n", obj))
-
 				gvk := obj.GetObjectKind().GroupVersionKind()
 				old := &unstructured.Unstructured{}
 				old.SetGroupVersionKind(gvk)
 				key := client.ObjectKeyFromObject(obj)
 				if err := r.Get(ctx, key, old); err != nil {
-
 					if err := r.Create(ctx, obj); err != nil {
 						reqLogger.Error(err, "Create failed", "key", key, "GroupVersionKind", gvk)
 						return ctrl.Result{}, err
@@ -168,13 +170,41 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					}
 				}
 			}
+
+			go query_tsyncd(cfgTemplate.ServicePrefix)
+
+			if cfgTemplate.EnableGPS {
+				go query_gpsd(cfgTemplate.ServicePrefix)
+			}
+
+			nodeStatus := stsv1alpha1.STSNodeStatus{
+				Name: node.Name,
+				TsyncStatus: stsv1alpha1.TsyncStatus{
+					Status: "unknown",
+					Mode:   stsConfig.Spec.Mode,
+				},
+				GpsStatus: stsv1alpha1.GPSStatus{
+					Status: "unknown",
+				},
+			}
+			statusList.NodeStatus = append(statusList.NodeStatus, nodeStatus)
+		}
+
+		stsConfig.Status.State = "my state"
+		statusList.DeepCopyInto(&stsConfig.Status)
+		if err := r.Status().Update(ctx.Background(), &stsConfig); err != nil {
+			reqLogger.Error(err, "Update failed: stsConfig")
+			return ctrl.Result{}, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
 // syncStsConfig synchronizes StsConfig CR
 func (r *StsConfigReconciler) syncStsConfig(ctx context.Context, StsConfigList *stsv1alpha1.StsConfigList, nodeList *v1.NodeList) error {
+	reqLogger := r.Log.WithValues("Request.Namespace--->")
+	reqLogger.Info("---->Syncing: stsConfig")
 
 	return nil
 }
@@ -186,4 +216,63 @@ func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 						Owns(&appsv1.DaemonSet{}).     // StsConfig owns Daemonsets created by it
 						Complete(r)
 	return nil
+}
+
+func query_tsyncd(svc_str string) {
+	time.Sleep(30 * time.Second)
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s-tsyncd:50051", svc_str), grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		fmt.Println(fmt.Sprintf("Could not connect: %v", err))
+	}
+	defer conn.Close()
+
+	fmt.Println(fmt.Sprintf("Connected to: %s-tsyncd:50051", svc_str))
+	c := pb.NewTsynctlClient(conn)
+
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+
+		r, err := c.GetStatus(ctx, &pb.Empty{})
+		if err != nil {
+			fmt.Println(fmt.Sprintf("could not get status: %v", err))
+		}
+		fmt.Println(fmt.Sprintf("Status: %d", r.Status))
+
+		r2, err := c.GetMode(ctx, &pb.Empty{})
+		if err != nil {
+			fmt.Println(fmt.Sprintf("could not get status: %v", err))
+		}
+		fmt.Println(fmt.Sprintf("Mode: %d", r2.Mode))
+
+		r3, err := c.GetTime(ctx, &pb.Empty{})
+		if err != nil {
+			fmt.Println(fmt.Sprintf("could not get time: %v", err))
+		}
+		fmt.Println(fmt.Sprintf("Time: %s", time.Unix(int64(r3.Time), 0).String()))
+
+		cancel()
+
+		time.Sleep(30 * time.Second)
+	}
+}
+
+func query_gpsd(svc_str string) {
+	time.Sleep(30 * time.Second)
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s-gpsd:2947", svc_str))
+	if err != nil {
+		fmt.Println(fmt.Sprintf("did not connect: %v", err))
+	}
+
+	fmt.Println(fmt.Sprintf("Connected to: %s-gpsd:2947", svc_str))
+
+	for {
+		fmt.Fprintf(conn, "?POLL;")
+		status, _ := bufio.NewReader(conn).ReadString('\n')
+
+		fmt.Println(status)
+
+		time.Sleep(30 * time.Second)
+	}
 }

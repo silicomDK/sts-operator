@@ -2,4 +2,5 @@
 resources:
 - sts_v1alpha1_bc_stsconfig.yaml
 - sts_v1alpha1_gm_stsconfig.yaml
+- sts_v1alpha1_stsnode.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -3,11 +3,15 @@ FROM golang:1.16 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod go.mod
+COPY go.mod.int go.mod
 COPY go.sum go.sum
+COPY pkg/ pkg/
+
+#RUN go mod tidy
+
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+RUN go mod download -x
 
 # Copy the go source
 COPY main.go main.go

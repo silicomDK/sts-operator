@@ -125,14 +125,9 @@ data:
 
     /usr/bin/tsyncd -f
 
-    #
-    # HACK!!!! Why does this have to be done?!?!
-    #
     while ! $(grep -q "IPC Server thread" /var/log/tsyncd.log); do
       sleep 5
     done
-
-    echo exit | tsynctl
 
     tail -f /var/log/tsyncd.log
 
@@ -203,8 +198,10 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: gpsd-svc
+  name: {{.ServicePrefix}}-gpsd
   namespace: {{.Spec.Namespace}}
+  labels:
+    sts.silicom.com/svc: gpsd
 spec:
   type: NodePort
   selector:
@@ -220,8 +217,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tsyncd-svc
+  name: {{.ServicePrefix}}-tsyncd
   namespace: {{.Spec.Namespace}}
+  labels:
+    sts.silicom.com/svc: tsyncd
 spec:
   type: NodePort
   selector:
@@ -232,7 +231,6 @@ spec:
       targetPort: 50051
 
 ---
-
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -258,12 +256,12 @@ spec:
       nodeName: {{.NodeName}}
       nodeSelector:
 {{ range $k, $v := .Spec.NodeSelector }}
-        {{ $k }}:{{ $v }}
+        {{ $k }}: "{{ $v }}"
 {{ end }}
       serviceAccount: {{.Spec.Name}}
       hostNetwork: true
       containers:
-      - image: quay.io/ryan_raasch/phc2sys:latest
+      - image: {{.Spec.ImageRegistry}}/phc2sys:latest
         command: [ "/bin/entrypoint.sh" ]
         name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always
@@ -276,9 +274,19 @@ spec:
             subPath: entrypoint.sh
         securityContext:
           privileged: true
-      - image: quay.io/silicom/grpc-tsyncd:1.2.0.1
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+            - CAP_SYS_TIME
+      - image: {{.Spec.ImageRegistry}}/grpc-tsyncd:1.2.0.1
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+            - CAP_SYS_ADMIN
         readinessProbe:
           tcpSocket:
             port: 50051
@@ -291,11 +299,8 @@ spec:
           periodSeconds: 10
         ports:
         - containerPort: 50051
-          name: tsyncd-svc
-        volumeMounts:
-          - name: devfs
-            mountPath: /dev
-      - image: quay.io/silicom/siltsync:1.2.0.1
+          name: {{.ServicePrefix}}-tsyncd
+      - image: {{.Spec.ImageRegistry}}/siltsync:1.2.0.1
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-siltsync
@@ -304,8 +309,6 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: sysfs
-            mountPath: /sys
           - name: {{.Spec.Name}}-siltsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
@@ -318,7 +321,7 @@ spec:
         securityContext:
           privileged: true
 {{ if .EnableGPS }}
-      - image: quay.io/silicom/siltsync:1.2.0.1
+      - image: {{.Spec.ImageRegistry}}/siltsync:1.2.0.1
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
@@ -334,12 +337,10 @@ spec:
           periodSeconds: 10
         ports:
         - containerPort: 2947
-          name: gpsd-svc
+          name: {{.ServicePrefix}}-gpsd
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: sysfs
-            mountPath: /sys
           - name: {{.Spec.Name}}-gpsd-entrypoint
             mountPath: /bin/entrypoint.sh
             subPath: entrypoint.sh
@@ -353,28 +354,25 @@ spec:
         - name: devfs
           hostPath:
             path: /dev
-        - name: sysfs
-          hostPath:
-            path: /sys
         - name: {{.Spec.Name}}-siltsync-conf
           configMap:
-            defaultMode: 0700
+            defaultMode: 0777
             name: {{.Spec.Name}}-siltsync-conf
         - name: {{.Spec.Name}}-siltsync-run-cfg
           configMap:
-            defaultMode: 0700
+            defaultMode: 0777
             name: {{.Spec.Name}}-siltsync-run-cfg
         - name: {{.Spec.Name}}-siltsync-entrypoint
           configMap:
-            defaultMode: 0700
+            defaultMode: 0777
             name: {{.Spec.Name}}-siltsync-entrypoint
         - name: {{.Spec.Name}}-phc2sys-entrypoint
           configMap:
-            defaultMode: 0700
+            defaultMode: 0777
             name: {{.Spec.Name}}-phc2sys-entrypoint
 {{ if .EnableGPS }}
         - name: {{.Spec.Name}}-gpsd-entrypoint
           configMap:
-            defaultMode: 0700
+            defaultMode: 0777
             name: {{.Spec.Name}}-gpsd-entrypoint
 {{end}}

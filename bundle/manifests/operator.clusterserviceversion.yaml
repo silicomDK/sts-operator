@@ -57,6 +57,16 @@ metadata:
               "mode.sts.silicom.com/gm-1": ""
             }
           }
+        },
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsNode",
+          "metadata": {
+            "name": "stsnode-sample"
+          },
+          "spec": {
+            "foo": "bar"
+          }
         }
       ]
     capabilities: Basic Install
@@ -72,6 +82,11 @@ spec:
       displayName: Sts Config
       kind: StsConfig
       name: stsconfigs.sts.silicom.com
+      version: v1alpha1
+    - description: StsNode is the Schema for the stsnodes API
+      displayName: Sts Node
+      kind: StsNode
+      name: stsnodes.sts.silicom.com
       version: v1alpha1
   description: handles silicom sts ptp pci cards
   displayName: sts-operator

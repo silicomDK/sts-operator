@@ -36,6 +36,8 @@ spec:
           spec:
             description: StsConfigSpec defines the desired state of StsConfig
             properties:
+              imageRegistry:
+                type: string
               interfaces:
                 items:
                   properties:
@@ -63,6 +65,7 @@ spec:
                   type: string
                 type: object
             required:
+            - imageRegistry
             - interfaces
             - mode
             - name
@@ -70,6 +73,39 @@ spec:
             type: object
           status:
             description: StsConfigStatus defines the observed state of StsConfig
+            properties:
+              nodeStatus:
+                items:
+                  properties:
+                    gpsStatus:
+                      properties:
+                        status:
+                          type: string
+                      required:
+                      - status
+                      type: object
+                    name:
+                      type: string
+                    tsyncStatus:
+                      properties:
+                        mode:
+                          type: string
+                        status:
+                          type: string
+                      required:
+                      - mode
+                      - status
+                      type: object
+                  required:
+                  - name
+                  - tsyncStatus
+                  type: object
+                type: array
+              state:
+                type: string
+            required:
+            - nodeStatus
+            - state
             type: object
         type: object
     served: true

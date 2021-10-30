@@ -30,8 +30,8 @@ func labelNode() {
 		panic(err.Error())
 	}
 
-	// node-role.sts.silicom.com/master
-	// node-role.sts.silicom.com/boundary
+	// mode.sts.silicom.com/master
+	// mode.sts.silicom.com/boundary
 	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{LabelSelector: "feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present"})
 	if err != nil {
 		panic(err.Error())

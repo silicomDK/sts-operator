@@ -25,23 +25,42 @@ import (
 
 // StsConfigSpec defines the desired state of StsConfig
 type StsConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// +kubebuilder:validation:Pattern=[a-z0-9\.\-]+
 	Name string `json:"name"`
 
 	Interfaces   []StsInterfaceSpec `json:"interfaces"`
 	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
 
-	Mode      string `json:"mode"`
-	Namespace string `json:"namespace"`
+	ImageRegistry string `json:"imageRegistry"`
+	Mode          string `json:"mode"`
+	Namespace     string `json:"namespace"`
+}
+
+type STSNodeStatus struct {
+	Name        string      `json:"name"`
+	TsyncStatus TsyncStatus `json:"tsyncStatus"`
+	GpsStatus   GPSStatus   `json:"gpsStatus,omitempty"`
+}
+
+type TsyncStatus struct {
+	Mode   string `json:"mode"`
+	Status string `json:"status"`
+}
+
+type GPSStatus struct {
+	Status string `json:"status"`
+}
+
+type StsInterfaceSpec struct {
+	EthName string `json:"ethName"`
+	SyncE   bool   `json:"synce"`
+	HoldOff int    `json:"holdoff"`
 }
 
 // StsConfigStatus defines the observed state of StsConfig
 type StsConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	NodeStatus []STSNodeStatus `json:"nodeStatus"`
+	State      string          `json:"state"`
 }
 
 //+kubebuilder:object:root=true
@@ -51,7 +70,7 @@ type StsConfigStatus struct {
 type StsConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	// +kubebuilder:validation:Required
 	Spec   StsConfigSpec   `json:"spec,omitempty"`
 	Status StsConfigStatus `json:"status,omitempty"`
 }
@@ -63,12 +82,6 @@ type StsConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []StsConfig `json:"items"`
-}
-
-type StsInterfaceSpec struct {
-	EthName string `json:"ethName"`
-	SyncE   bool   `json:"synce"`
-	HoldOff int    `json:"holdoff"`
 }
 
 func init() {

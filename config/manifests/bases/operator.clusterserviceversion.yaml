@@ -15,6 +15,11 @@ spec:
       kind: StsConfig
       name: stsconfigs.sts.silicom.com
       version: v1alpha1
+    - description: StsNode is the Schema for the stsnodes API
+      displayName: Sts Node
+      kind: StsNode
+      name: stsnodes.sts.silicom.com
+      version: v1alpha1
   description: handles silicom sts ptp pci cards
   displayName: sts-operator
   icon:
