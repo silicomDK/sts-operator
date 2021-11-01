@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{.Spec.Name}}
+  name: {{.Name}}
   namespace: {{.Spec.Namespace}}
 
 ---
@@ -10,7 +10,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{.Spec.Name}}
+  name: {{.Name}}
   namespace: {{.Spec.Namespace}}
 rules:
 - apiGroups:
@@ -37,15 +37,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{.Spec.Name}}
+  name: {{.Name}}
   namespace: {{.Spec.Namespace}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{.Spec.Name}}
+  name: {{.Name}}
 subjects:
 - kind: ServiceAccount
-  name: {{.Spec.Name}}
+  name: {{.Name}}
   namespace: {{.Spec.Namespace}}
 
 ---
@@ -53,7 +53,7 @@ subjects:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Spec.Name}}-phc2sys-entrypoint
+  name: {{.Name}}-phc2sys-entrypoint
   namespace: {{.Spec.Namespace}}
 data:
   entrypoint.sh: |
@@ -86,7 +86,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Spec.Name}}-gpsd-entrypoint
+  name: {{.Name}}-gpsd-entrypoint
   namespace: {{.Spec.Namespace}}
 data:
   entrypoint.sh: |
@@ -108,7 +108,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Spec.Name}}-siltsync-entrypoint
+  name: {{.Name}}-siltsync-entrypoint
   namespace: {{.Spec.Namespace}}
 data:
   entrypoint.sh: |
@@ -136,21 +136,22 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Spec.Name}}-siltsync-conf
+  name: {{.Name}}-siltsync-conf
   namespace: {{.Spec.Namespace}}
 data:
   tsyncd.conf: |
-{{ if eq .Spec.Mode "gm"}}
     profileID = 2
-{{end}}
-{{ if eq .Spec.Mode "bc"}}
-    profileID = 1
-{{end}}
-{{ range $i, $dev := .Spec.Interfaces }}
-    nicStr{{$i}} = {{$dev.EthName}}
-    qlEnable{{$i}} = 1
-    holdOff{{$i}} = 500
-{{end}}
+
+
+
+    nicStr0 = enp2s0f0
+    qlEnable0 = 1
+    holdOff0 = 500
+
+    nicStr1 = enp2s0f1
+    qlEnable1 = 1
+    holdOff1 = 500
+
     phyLedsCtl = 0
     IPCServer = 1
     domainNum = 24
@@ -181,7 +182,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Spec.Name}}-siltsync-run-cfg
+  name: {{.Name}}-siltsync-run-cfg
   namespace: {{.Spec.Namespace}}
 data:
   tsyncd-run.cfg: |
@@ -205,7 +206,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: {{.Spec.Name}}-{{.NodeName}}
+    app: {{.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
       port: 2947
@@ -224,7 +225,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: {{.Spec.Name}}-{{.NodeName}}
+    app: {{.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
       port: 50051
@@ -236,21 +237,21 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: {{.Spec.Name}}-{{.NodeName}}
-  name: {{.Spec.Name}}-{{.NodeName}}
+    app: {{.Name}}-{{.NodeName}}
+  name: {{.Name}}-{{.NodeName}}
   namespace: {{.Spec.Namespace}}
   annotations:
     openshift.io/scc: {{.Spec.Namespace}}
 spec:
   selector:
     matchLabels:
-      app: {{.Spec.Name}}-{{.NodeName}}
+      app: {{.Name}}-{{.NodeName}}
   template:
     metadata:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
-        app: {{.Spec.Name}}-{{.NodeName}}
+        app: {{.Name}}-{{.NodeName}}
     spec:
       shareProcessNamespace: true
       nodeName: {{.NodeName}}
@@ -258,7 +259,7 @@ spec:
 {{ range $k, $v := .Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{ end }}
-      serviceAccount: {{.Spec.Name}}
+      serviceAccount: {{.Name}}
       hostNetwork: true
       containers:
       - image: {{.Spec.ImageRegistry}}/phc2sys:latest
@@ -269,7 +270,7 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Spec.Name}}-phc2sys-entrypoint
+          - name: {{.Name}}-phc2sys-entrypoint
             mountPath: /bin/entrypoint.sh
             subPath: entrypoint.sh
         securityContext:
@@ -300,7 +301,7 @@ spec:
         ports:
         - containerPort: 50051
           name: {{.ServicePrefix}}-tsyncd
-      - image: {{.Spec.ImageRegistry}}/siltsync:1.2.0.1
+      - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-siltsync
@@ -309,19 +310,19 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Spec.Name}}-siltsync-conf
+          - name: {{.Name}}-siltsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
-          - name: {{.Spec.Name}}-siltsync-run-cfg
+          - name: {{.Name}}-siltsync-run-cfg
             mountPath: /etc/tsyncd/tsyncd-run.cfg
             subPath: tsyncd-run.cfg
-          - name: {{.Spec.Name}}-siltsync-entrypoint
+          - name: {{.Name}}-siltsync-entrypoint
             mountPath: /bin/entrypoint.sh
             subPath: entrypoint.sh
         securityContext:
           privileged: true
 {{ if .EnableGPS }}
-      - image: {{.Spec.ImageRegistry}}/siltsync:1.2.0.1
+      - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
         command: [ "/bin/entrypoint.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
@@ -341,7 +342,7 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Spec.Name}}-gpsd-entrypoint
+          - name: {{.Name}}-gpsd-entrypoint
             mountPath: /bin/entrypoint.sh
             subPath: entrypoint.sh
         securityContext:
@@ -354,25 +355,25 @@ spec:
         - name: devfs
           hostPath:
             path: /dev
-        - name: {{.Spec.Name}}-siltsync-conf
+        - name: {{.Name}}-siltsync-conf
           configMap:
             defaultMode: 0777
-            name: {{.Spec.Name}}-siltsync-conf
-        - name: {{.Spec.Name}}-siltsync-run-cfg
+            name: {{.Name}}-siltsync-conf
+        - name: {{.Name}}-siltsync-run-cfg
           configMap:
             defaultMode: 0777
-            name: {{.Spec.Name}}-siltsync-run-cfg
-        - name: {{.Spec.Name}}-siltsync-entrypoint
+            name: {{.Name}}-siltsync-run-cfg
+        - name: {{.Name}}-siltsync-entrypoint
           configMap:
             defaultMode: 0777
-            name: {{.Spec.Name}}-siltsync-entrypoint
-        - name: {{.Spec.Name}}-phc2sys-entrypoint
+            name: {{.Name}}-siltsync-entrypoint
+        - name: {{.Name}}-phc2sys-entrypoint
           configMap:
             defaultMode: 0777
-            name: {{.Spec.Name}}-phc2sys-entrypoint
+            name: {{.Name}}-phc2sys-entrypoint
 {{ if .EnableGPS }}
-        - name: {{.Spec.Name}}-gpsd-entrypoint
+        - name: {{.Name}}-gpsd-entrypoint
           configMap:
             defaultMode: 0777
-            name: {{.Spec.Name}}-gpsd-entrypoint
+            name: {{.Name}}-gpsd-entrypoint
 {{end}}

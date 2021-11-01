@@ -25,15 +25,56 @@ import (
 
 // StsConfigSpec defines the desired state of StsConfig
 type StsConfigSpec struct {
-	// +kubebuilder:validation:Pattern=[a-z0-9\.\-]+
-	Name string `json:"name"`
-
 	Interfaces   []StsInterfaceSpec `json:"interfaces"`
 	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
 
-	ImageRegistry string `json:"imageRegistry"`
-	Mode          string `json:"mode"`
-	Namespace     string `json:"namespace"`
+	// +kubebuilder:default:string=quay.io/silicom
+	ImageRegistry string `json:"imageRegistry,omitempty"`
+
+	// +kubebuilder:default:string="2.0.0.1"
+	StsVersion string `json:"stsVersion,omitempty"`
+
+	// +kubebuilder:validation:Enum=GrandMaster;BoundaryClock;Slave
+	// +kubebuilder:default:="GrandMaster"
+	Mode string `json:"mode,omitempty"`
+
+	// +kubebuilder:default:="sts-silicom"
+	Namespace string `json:"namespace,omitempty"`
+
+	// +kubebuilder:default:=24
+	// +kubebuilder:validation:Minimum=24
+	// +kubebuilder:validation:Maximum=48
+	DomainNumber int `json:"domainNumber,omitempty"`
+
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=3
+	SrcPPS int `json:"srcPPS,omitempty"`
+
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=3
+	Src10MHz int `json:"src10MHz,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=7
+	SynceRecClkPort int `json:"synceRecClkPort,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	PhyLedsCtl int `json:"phyLedsCtl,omitempty"`
+
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=2
+	SyncOption int `json:"synceOption,omitempty"`
+
+	// +kubebuilder:default:=10
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=40
+	SynceCpu int `json:"synceCpu,omitempty"`
 }
 
 type STSNodeStatus struct {
@@ -53,8 +94,26 @@ type GPSStatus struct {
 
 type StsInterfaceSpec struct {
 	EthName string `json:"ethName"`
-	SyncE   bool   `json:"synce"`
-	HoldOff int    `json:"holdoff"`
+	EthPort int    `json:"ethPort"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	SyncE int `json:"synce,omitempty"`
+
+	// +kubebuilder:default:=500
+	// +kubebuilder:validation:Minimum=300
+	// +kubebuilder:validation:Maximum=1800
+	HoldOff int `json:"holdoff,omitempty"`
+
+	// +kubebuilder:validation:Enum=GrandMaster;BoundaryClock;Slave
+	// +kubebuilder:default:=GrandMaster
+	Mode string `json:"mode,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	QlEnable int `json:"qlEnable,omitempty"`
 }
 
 // StsConfigStatus defines the observed state of StsConfig

@@ -53,9 +53,31 @@ type StsConfigReconciler struct {
 
 type StsConfigTemplate struct {
 	*stsv1alpha1.StsConfig
-	NodeName      string
-	EnableGPS     bool
-	ServicePrefix string
+	NodeName       string
+	EnableGPS      bool
+	ServicePrefix  string
+	SlavePortMask  int
+	MasterPortMask int
+	SyncePortMask  int
+}
+
+func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
+
+	cfg.SlavePortMask = 0
+	cfg.MasterPortMask = 0
+	cfg.SyncePortMask = 0
+
+	for _, x := range interfaces {
+		if x.SyncE == 1 {
+			cfg.SyncePortMask |= (1 << x.EthPort)
+		}
+
+		if x.Mode == "GrandMaster" {
+			cfg.MasterPortMask |= (1 << x.EthPort)
+		} else if x.Mode == "Slave" {
+			cfg.MasterPortMask |= (1 << x.EthPort)
+		}
+	}
 }
 
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -119,10 +141,11 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s", node.Name))
 
-			cfgTemplate.EnableGPS = stsConfig.Spec.Mode == "gm"
+			cfgTemplate.EnableGPS = stsConfig.Spec.Mode == "GrandMaster"
 			cfgTemplate.NodeName = node.Name
 			cfgTemplate.StsConfig = &stsConfig
 			cfgTemplate.ServicePrefix = node.Name
+			r.interfacesToBitmask(cfgTemplate, stsConfig.Spec.Interfaces)
 
 			err = t.Execute(&buff, cfgTemplate)
 			if err != nil {
@@ -171,12 +194,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				}
 			}
 
-			go query_tsyncd(cfgTemplate.ServicePrefix)
-
-			if cfgTemplate.EnableGPS {
-				go query_gpsd(cfgTemplate.ServicePrefix)
-			}
-
 			nodeStatus := stsv1alpha1.STSNodeStatus{
 				Name: node.Name,
 				TsyncStatus: stsv1alpha1.TsyncStatus{
@@ -188,11 +205,17 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				},
 			}
 			statusList.NodeStatus = append(statusList.NodeStatus, nodeStatus)
+
+			go r.query_tsyncd(cfgTemplate.ServicePrefix)
+
+			if cfgTemplate.EnableGPS {
+				go r.query_gpsd(cfgTemplate.ServicePrefix)
+			}
 		}
 
-		stsConfig.Status.State = "my state"
+		stsConfig.Status.State = cfgTemplate.ServicePrefix
 		statusList.DeepCopyInto(&stsConfig.Status)
-		if err := r.Status().Update(ctx.Background(), &stsConfig); err != nil {
+		if err := r.Status().Update(ctx, &stsConfig); err != nil {
 			reqLogger.Error(err, "Update failed: stsConfig")
 			return ctrl.Result{}, err
 		}
@@ -218,7 +241,7 @@ func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-func query_tsyncd(svc_str string) {
+func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 	time.Sleep(30 * time.Second)
 
 	conn, err := grpc.Dial(fmt.Sprintf("%s-tsyncd:50051", svc_str), grpc.WithInsecure(), grpc.WithBlock())
@@ -257,7 +280,7 @@ func query_tsyncd(svc_str string) {
 	}
 }
 
-func query_gpsd(svc_str string) {
+func (r *StsConfigReconciler) query_gpsd(svc_str string) {
 	time.Sleep(30 * time.Second)
 
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s-gpsd:2947", svc_str))
