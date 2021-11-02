@@ -31,7 +31,7 @@ type StsConfigSpec struct {
 	// +kubebuilder:default:string=quay.io/silicom
 	ImageRegistry string `json:"imageRegistry,omitempty"`
 
-	// +kubebuilder:default:string="2.0.0.1"
+	// +kubebuilder:default:string="2.0.0.0"
 	StsVersion string `json:"stsVersion,omitempty"`
 
 	// +kubebuilder:validation:Enum=GrandMaster;BoundaryClock;Slave
