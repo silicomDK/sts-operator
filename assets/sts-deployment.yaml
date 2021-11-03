@@ -53,116 +53,36 @@ subjects:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Name}}-phc2sys-entrypoint
-  namespace: {{.Spec.Namespace}}
-data:
-  entrypoint.sh: |
-    #!/bin/bash
-
-    while ! nc -z 0.0.0.0 8888; do
-        echo "Waiting for gpsd"
-        sleep 3;
-    done
-
-    sleep 5;
-
-    ptp_dev="ptp0"
-    let i=0
-    for dev in $(ls /sys/class/ptp) ; do
-        if $(realpath /sys/class/ptp/$dev/device/driver | grep -q ice); then
-            ptp_dev=$dev
-            break
-        fi
-        let i=$i+1
-    done
-
-    echo 1 1 >  /sys/class/ptp/$ptp_dev/extts_enable
-    echo "phc2sys -O 0 -r -m -s /dev/$ptp_dev"
-    phc2sys -O 0 -r -m -s /dev/$ptp_dev
-
----
-
-{{ if .EnableGPS}}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{.Name}}-gpsd-entrypoint
-  namespace: {{.Spec.Namespace}}
-data:
-  entrypoint.sh: |
-    #!/bin/bash
-
-    tty=`ls /sys/class/tty | grep ACM | tail -n 1`
-
-    stty -F /dev/$tty ispeed 9600
-    echo -e -n  '\xB5\x62\x06\x02\x0A\x00\x00\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\x00\x0D\xD2' > /dev/$tty
-
-    echo "gpsd --nowait --foreground /dev/$tty --listenany --passive --pidfile /tmp/gpsd.pid &> /tmp/gpsd.log"
-    gpsd --nowait --foreground /dev/$tty --listenany --passive --pidfile /tmp/gpsd.pid &> /tmp/gpsd.log &
-    sleep 10
-    # ubxtool -e NMEA NO PYTHON
-    nc -lk 0.0.0.0 8888
----
-{{end}}
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{.Name}}-siltsync-entrypoint
-  namespace: {{.Spec.Namespace}}
-data:
-  entrypoint.sh: |
-    #!/bin/bash
-{{ if eq .Spec.Mode "gm" }}
-    while ! nc -z 0.0.0.0 8888; do
-        echo "Waiting for gpsd"
-        sleep 3;
-    done
-{{end}}
-
-    /usr/bin/plltool -l /etc/tsyncd/STS2.mfg
-    /usr/bin/plltool -i
-
-    /usr/bin/tsyncd -f
-
-    while ! $(grep -q "IPC Server thread" /var/log/tsyncd.log); do
-      sleep 5
-    done
-
-    tail -f /var/log/tsyncd.log
-
----
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: {{.Name}}-siltsync-conf
   namespace: {{.Spec.Namespace}}
 data:
   tsyncd.conf: |
+{{ if eq .Spec.Mode "BoundaryClock"}}
+    profileID = 1
+{{end}}
+{{ if eq .Spec.Mode "GrandMaster"}}
     profileID = 2
+{{end}}
+{{ range $i, $dev := .Spec.Interfaces }}
+    nicStr{{$i}} = {{$dev.EthName}}
+    qlEnable{{$i}} = {{$dev.QlEnable}}
+    holdOff{{$i}} = {{$dev.HoldOff}}
+{{end}}
 
-
-
-    nicStr0 = enp2s0f0
-    qlEnable0 = 1
-    holdOff0 = 500
-
-    nicStr1 = enp2s0f1
-    qlEnable1 = 1
-    holdOff1 = 500
-
-    phyLedsCtl = 0
+    slavePortMask = {{print "0x%x" .SlavePortMask}}
+    masterPortMask = {{print "0x%x" .MasterPortMask}}
+    syncePortMask = {{print "0x%x" .SyncePortMask}}
+    phyLedsCtl = {{.Spec.PhyLedsCtl}}
     IPCServer = 1
-    domainNum = 24
+    domainNum = {{.Spec.DomainNumber}}
     forwardable = 0
     twoStep = 0
     priority2 = 128
-    srcPPS = 1
-    src10MHz = 1
-    synceRecClkPort = 0
-    syncOption = 1
-    synceCpu = 10
+    srcPPS = {{.Spec.SrcPPS}}
+    src10MHz = {{.Spec.Src10MHz}}
+    synceRecClkPort = {{.Spec.SynceRecClkPort}}
+    syncOption = {{.Spec.SyncOption}}
+    synceCpu = {{.Spec.SynceCpu}}
     swTimestamp = 0
     inbandMode = 1 
     dumpMode = 0
@@ -179,23 +99,7 @@ data:
 
 ---
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{.Name}}-siltsync-run-cfg
-  namespace: {{.Spec.Namespace}}
-data:
-  tsyncd-run.cfg: |
-    net_id=1591
-    delay=10
-    lane_map=8
-    bcm_port_mask=0xff
-    num_ports_10G=8
-    num_ports_25G=4
-
----
-
-{{ if .EnableGPS }}
+{{- if .EnableGPS }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -263,16 +167,24 @@ spec:
       hostNetwork: true
       containers:
       - image: {{.Spec.ImageRegistry}}/phc2sys:latest
-        command: [ "/bin/entrypoint.sh" ]
+        command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always
         network_mode: host
+        env:
+          - name: WAIT_FOR_GPS
+{{- if .EnableGPS}}
+            value: "true"
+{{- else}}
+            value: "false"
+{{end}}
+          - name: GPS_SERVER
+            value: "0.0.0.0"
+          - name: GPS_PORT
+            value: "8888"
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Name}}-phc2sys-entrypoint
-            mountPath: /bin/entrypoint.sh
-            subPath: entrypoint.sh
         securityContext:
           privileged: true
           readOnlyRootFilesystem: false
@@ -302,9 +214,20 @@ spec:
         - containerPort: 50051
           name: {{.ServicePrefix}}-tsyncd
       - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
-        command: [ "/bin/entrypoint.sh" ]
+        command: [ "/usr/bin/run-tsyncd.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-siltsync
+        env:
+          - name: WAIT_FOR_GPS
+{{- if .EnableGPS}}
+            value: "true"
+{{- else}}
+            value: "false"
+{{- end}}
+          - name: GPS_SERVER
+            value: "0.0.0.0"
+          - name: GPS_PORT
+            value: "8888"
         args:
         - --zap-log-level=10
         volumeMounts:
@@ -313,17 +236,11 @@ spec:
           - name: {{.Name}}-siltsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
-          - name: {{.Name}}-siltsync-run-cfg
-            mountPath: /etc/tsyncd/tsyncd-run.cfg
-            subPath: tsyncd-run.cfg
-          - name: {{.Name}}-siltsync-entrypoint
-            mountPath: /bin/entrypoint.sh
-            subPath: entrypoint.sh
         securityContext:
           privileged: true
-{{ if .EnableGPS }}
+{{- if .EnableGPS }}
       - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
-        command: [ "/bin/entrypoint.sh" ]
+        command: [ "/usr/bin/run-gpsd.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
         readinessProbe:
@@ -342,9 +259,6 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Name}}-gpsd-entrypoint
-            mountPath: /bin/entrypoint.sh
-            subPath: entrypoint.sh
         securityContext:
           privileged: true
           readOnlyRootFilesystem: false
@@ -359,21 +273,3 @@ spec:
           configMap:
             defaultMode: 0777
             name: {{.Name}}-siltsync-conf
-        - name: {{.Name}}-siltsync-run-cfg
-          configMap:
-            defaultMode: 0777
-            name: {{.Name}}-siltsync-run-cfg
-        - name: {{.Name}}-siltsync-entrypoint
-          configMap:
-            defaultMode: 0777
-            name: {{.Name}}-siltsync-entrypoint
-        - name: {{.Name}}-phc2sys-entrypoint
-          configMap:
-            defaultMode: 0777
-            name: {{.Name}}-phc2sys-entrypoint
-{{ if .EnableGPS }}
-        - name: {{.Name}}-gpsd-entrypoint
-          configMap:
-            defaultMode: 0777
-            name: {{.Name}}-gpsd-entrypoint
-{{end}}

@@ -106,7 +106,7 @@ spec:
                 minimum: 1
                 type: integer
               stsVersion:
-                default: 2.0.0.1
+                default: 2.0.0.0
                 type: string
               synceCpu:
                 default: 10
