@@ -69,9 +69,9 @@ data:
     holdOff{{$i}} = {{$dev.HoldOff}}
 {{end}}
 
-    slavePortMask = {{print "0x%x" .SlavePortMask}}
-    masterPortMask = {{print "0x%x" .MasterPortMask}}
-    syncePortMask = {{print "0x%x" .SyncePortMask}}
+    slavePortMask = {{printf "0x%x" .SlavePortMask}}
+    masterPortMask = {{printf "0x%x" .MasterPortMask}}
+    syncePortMask = {{printf "0x%x" .SyncePortMask}}
     phyLedsCtl = {{.Spec.PhyLedsCtl}}
     IPCServer = 1
     domainNum = {{.Spec.DomainNumber}}
