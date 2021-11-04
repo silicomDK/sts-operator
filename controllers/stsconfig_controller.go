@@ -59,6 +59,7 @@ type StsConfigTemplate struct {
 	SlavePortMask  int
 	MasterPortMask int
 	SyncePortMask  int
+	ProfileId      int
 }
 
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
@@ -141,7 +142,16 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s", node.Name))
 
-			cfgTemplate.EnableGPS = stsConfig.Spec.Mode == "GrandMaster"
+			cfgTemplate.EnableGPS = false
+			if stsConfig.Spec.Mode == "T-TGM.8275.1" {
+				cfgTemplate.ProfileId = 2
+				cfgTemplate.EnableGPS = true
+			} else if stsConfig.Spec.Mode == "T-BC-8275.1" {
+				cfgTemplate.ProfileId = 1
+			} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
+				cfgTemplate.ProfileId = 1
+			}
+
 			cfgTemplate.NodeName = node.Name
 			cfgTemplate.StsConfig = &stsConfig
 			cfgTemplate.ServicePrefix = node.Name

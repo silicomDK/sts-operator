@@ -34,8 +34,8 @@ type StsConfigSpec struct {
 	// +kubebuilder:default:string="2.0.0.0"
 	StsVersion string `json:"stsVersion,omitempty"`
 
-	// +kubebuilder:validation:Enum=GrandMaster;BoundaryClock;Slave
-	// +kubebuilder:default:="GrandMaster"
+	// +kubebuilder:validation:Enum=T-GM.8275.1;T-BC-8275.1;T-TSC.8275.1
+	// +kubebuilder:default:="T-GM.8275.1"
 	Mode string `json:"mode,omitempty"`
 
 	// +kubebuilder:default:="sts-silicom"
@@ -106,8 +106,8 @@ type StsInterfaceSpec struct {
 	// +kubebuilder:validation:Maximum=1800
 	HoldOff int `json:"holdoff,omitempty"`
 
-	// +kubebuilder:validation:Enum=GrandMaster;BoundaryClock;Slave
-	// +kubebuilder:default:=GrandMaster
+	// +kubebuilder:validation:Enum=Master;Slave
+	// +kubebuilder:default:=Master
 	Mode string `json:"mode,omitempty"`
 
 	// +kubebuilder:default:=0
