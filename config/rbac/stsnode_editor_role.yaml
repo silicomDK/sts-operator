@@ -1,0 +1,24 @@
+# permissions for end users to edit stsnodes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stsnode-editor-role
+rules:
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsnodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsnodes/status
+  verbs:
+  - get

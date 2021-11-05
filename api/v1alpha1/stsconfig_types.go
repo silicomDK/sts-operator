@@ -78,8 +78,8 @@ type StsConfigSpec struct {
 }
 
 type STSNodeStatus struct {
-	Name        string      `json:"name"`
-	TsyncStatus TsyncStatus `json:"tsyncStatus"`
+	Name        string      `json:"name,omitempty"`
+	TsyncStatus TsyncStatus `json:"tsyncStatus,omitempty"`
 	GpsStatus   GPSStatus   `json:"gpsStatus,omitempty"`
 }
 
@@ -89,7 +89,9 @@ type TsyncStatus struct {
 }
 
 type GPSStatus struct {
-	Status string `json:"status"`
+	Time string `json:"time"`
+	Lat  int    `json:"lat"`
+	Lon  int    `json:"lon"`
 }
 
 type StsInterfaceSpec struct {
@@ -118,8 +120,7 @@ type StsInterfaceSpec struct {
 
 // StsConfigStatus defines the observed state of StsConfig
 type StsConfigStatus struct {
-	NodeStatus []STSNodeStatus `json:"nodeStatus"`
-	State      string          `json:"state"`
+	NodeStatus []STSNodeStatus `json:"nodeStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true

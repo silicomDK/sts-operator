@@ -1,0 +1,84 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "github.com/silicomdk/sts-operator/grpc/tsynctl";
+option java_multiple_files = true;
+option java_package = "io.grpc.sts-operator.tsynctl";
+option java_outer_classname = "TsyncdProto";
+
+package tsynctl;
+
+// The greeting service definition.
+service Tsynctl {
+  // Sends the mode
+  rpc GetMode (Empty) returns (ModeReply) {}
+
+  // Sends the status
+  rpc GetStatus (Empty) returns (StatusReply) {}
+
+  // Sends the IPC time
+  rpc GetTime (Empty) returns (TimeReply) {}
+
+  // Sends the class
+  rpc GetClass (Empty) returns (ClassReply) {}
+
+  // Sends the alarms
+  rpc StreamAlarms(Empty) returns (stream AlarmReply) {}
+
+  // Get the parameters
+  rpc GetParams(Empty) returns (ParamsReply) {}
+}
+
+message Empty {
+}
+
+
+// The reply message containing status of Get IPC Server status
+message StatusReply {
+  int32 status = 1;
+}
+
+// The response message containing the mode
+message ModeReply {
+  int32 mode = 1;
+}
+
+// The response message containing the mode
+message TimeReply {
+  int32 time = 1;
+}
+
+message ClassReply {
+  int32 class = 1;
+}
+
+message AlarmReply {
+  int32		type = 1;
+	int32		val = 2;
+	int32		prev = 3;
+}
+
+message ParamsReply {
+  int32   profile = 1;
+  int32   domain = 2;
+  int32   forward = 3;
+  int32   twoStep = 4;
+  int32   priority2 = 5;
+  int32   ppsOut = 6;
+  int32   mhz10Out = 7;
+  int32   syncePort = 8;
+  int32   syncOpt = 9;
+}

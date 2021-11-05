@@ -107,8 +107,8 @@ spec:
     app: {{.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
-      port: 2947
-      targetPort: 2947
+      port: {{.GpsPort}}
+      targetPort: {{.GpsPort}}
 
 ---
 {{end}}
@@ -126,8 +126,8 @@ spec:
     app: {{.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
-      port: 50051
-      targetPort: 50051
+      port: {{.TsyncPort}}
+      targetPort: {{.TsyncPort}}
 
 ---
 
@@ -175,7 +175,7 @@ spec:
           - name: GPS_SERVER
             value: "0.0.0.0"
           - name: GPS_PORT
-            value: "8888"
+            value: "{{.GpsPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev
@@ -185,7 +185,7 @@ spec:
           capabilities:
             add:
             - CAP_SYS_TIME
-      - image: {{.Spec.ImageRegistry}}/grpc-tsyncd:1.2.0.1
+      - image: {{.Spec.ImageRegistry}}/grpc-tsyncd:{{.Spec.StsVersion}}
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
         securityContext:
@@ -196,16 +196,16 @@ spec:
             - CAP_SYS_ADMIN
         readinessProbe:
           tcpSocket:
-            port: 50051
+            port: {{.TsyncPort}}
           initialDelaySeconds: 15
           periodSeconds: 30
         livenessProbe:
           tcpSocket:
-            port: 50051
+            port: {{.TsyncPort}}
           initialDelaySeconds: 60
           periodSeconds: 10
         ports:
-        - containerPort: 50051
+        - containerPort: {{.TsyncPort}}
           name: {{.ServicePrefix}}-tsyncd
       - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
         command: [ "/usr/bin/run-tsyncd.sh" ]
@@ -221,7 +221,7 @@ spec:
           - name: GPS_SERVER
             value: "0.0.0.0"
           - name: GPS_PORT
-            value: "8888"
+            value: "{{.GpsPort}}"
         args:
         - --zap-log-level=10
         volumeMounts:
@@ -239,17 +239,20 @@ spec:
         name: {{.NodeName}}-gpsd
         readinessProbe:
           tcpSocket:
-            port: 2947
+            port: {{.GpsPort}}
           initialDelaySeconds: 15
           periodSeconds: 30
         livenessProbe:
           tcpSocket:
-            port: 2947
+            port: {{.GpsPort}}
           initialDelaySeconds: 60
           periodSeconds: 10
         ports:
-        - containerPort: 2947
+        - containerPort: {{.GpsPort}}
           name: {{.ServicePrefix}}-gpsd
+        env:
+          - name: GPS_PORT
+            value: "{{.GpsPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev

@@ -20,11 +20,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +63,54 @@ type StsConfigTemplate struct {
 	MasterPortMask int
 	SyncePortMask  int
 	ProfileId      int
+	GpsPort        int
+	TsyncPort      int
+}
+
+type GPSStatusRsp struct {
+	Tpvs []TPV `json:"tpv"`
+}
+
+type TPV struct {
+	Time string  `json:"time"`
+	Lat  float32 `json:"lat"`
+	Lon  float32 `json:"lon"`
+}
+
+const (
+	BC             = 1
+	GM             = 2
+	SC             = 3
+	STATUS_NORMAL  = 1
+	STATUS_INIT    = 2
+	STATUS_BUSY    = 3
+	STATUS_INVALID = 4
+)
+
+func printMode(s int) string {
+	switch s {
+	case GM:
+		return "T-GM.8275.1"
+	case BC:
+		return "T-BC-8275.1"
+	case SC:
+		return "T-TSC.8275.1"
+	}
+	return fmt.Sprintf("unknown: %d", s)
+}
+
+func printStatus(s int) string {
+	switch s {
+	case STATUS_NORMAL:
+		return "Normal"
+	case STATUS_INIT:
+		return "Initializing"
+	case STATUS_BUSY:
+		return "Busy"
+	case STATUS_INVALID:
+		return "Invalid"
+	}
+	return fmt.Sprintf("unknown: %d", s)
 }
 
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
@@ -73,7 +124,7 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 			cfg.SyncePortMask |= (1 << x.EthPort)
 		}
 
-		if x.Mode == "GrandMaster" {
+		if x.Mode == "Master" {
 			cfg.MasterPortMask |= (1 << x.EthPort)
 		} else if x.Mode == "Slave" {
 			cfg.MasterPortMask |= (1 << x.EthPort)
@@ -122,6 +173,11 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	//matches := make(map[string]string, 3)
+	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present"] = "true"
+	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d0.present"] = "true"
+	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02de.present"] = "true"
+
 	for _, stsConfig := range stsConfigList.Items {
 
 		nodeList := &v1.NodeList{}
@@ -140,16 +196,34 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 			var buff bytes.Buffer
 
-			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s", node.Name))
+			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
 
 			cfgTemplate.EnableGPS = false
-			if stsConfig.Spec.Mode == "T-TGM.8275.1" {
+			if stsConfig.Spec.Mode == "T-GM.8275.1" {
 				cfgTemplate.ProfileId = 2
 				cfgTemplate.EnableGPS = true
 			} else if stsConfig.Spec.Mode == "T-BC-8275.1" {
 				cfgTemplate.ProfileId = 1
 			} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
-				cfgTemplate.ProfileId = 1
+				cfgTemplate.ProfileId = 3
+			}
+
+			cfgTemplate.GpsPort = 2947
+			if len(os.Getenv("GPS_PORT")) > 1 {
+				i2, err := strconv.Atoi(os.Getenv("GPS_PORT"))
+				if err == nil {
+					fmt.Println(i2)
+				}
+				cfgTemplate.GpsPort = i2
+			}
+
+			cfgTemplate.TsyncPort = 50051
+			if len(os.Getenv("TSYNC_PORT")) > 1 {
+				i2, err := strconv.Atoi(os.Getenv("TSYNC_PORT"))
+				if err == nil {
+					fmt.Println(i2)
+				}
+				cfgTemplate.TsyncPort = i2
 			}
 
 			cfgTemplate.NodeName = node.Name
@@ -211,19 +285,20 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					Mode:   stsConfig.Spec.Mode,
 				},
 				GpsStatus: stsv1alpha1.GPSStatus{
-					Status: "unknown",
+					Time: "unknown",
+					Lon:  0,
+					Lat:  0,
 				},
 			}
 			statusList.NodeStatus = append(statusList.NodeStatus, nodeStatus)
 
-			go r.query_tsyncd(cfgTemplate.ServicePrefix)
+			go r.query_tsyncd(fmt.Sprintf("%s-tsyncd:%d", cfgTemplate.ServicePrefix, cfgTemplate.TsyncPort))
 
 			if cfgTemplate.EnableGPS {
-				go r.query_gpsd(cfgTemplate.ServicePrefix)
+				go r.query_gpsd(fmt.Sprintf("%s-gpsd:%d", cfgTemplate.ServicePrefix, cfgTemplate.GpsPort))
 			}
 		}
 
-		stsConfig.Status.State = cfgTemplate.ServicePrefix
 		statusList.DeepCopyInto(&stsConfig.Status)
 		if err := r.Status().Update(ctx, &stsConfig); err != nil {
 			reqLogger.Error(err, "Update failed: stsConfig")
@@ -254,13 +329,13 @@ func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 	time.Sleep(30 * time.Second)
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s-tsyncd:50051", svc_str), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(svc_str, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Could not connect: %v", err))
 	}
 	defer conn.Close()
 
-	fmt.Println(fmt.Sprintf("Connected to: %s-tsyncd:50051", svc_str))
+	fmt.Println(fmt.Sprintf("Connected to: %s", svc_str))
 	c := pb.NewTsynctlClient(conn)
 
 	for {
@@ -270,13 +345,14 @@ func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 		if err != nil {
 			fmt.Println(fmt.Sprintf("could not get status: %v", err))
 		}
-		fmt.Println(fmt.Sprintf("Status: %d", r.Status))
+		fmt.Println(fmt.Sprintf("Status: %s", printStatus(int(r.Status))))
 
 		r2, err := c.GetMode(ctx, &pb.Empty{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("could not get status: %v", err))
+			fmt.Println(fmt.Sprintf("could not get mode: %v", err))
 		}
-		fmt.Println(fmt.Sprintf("Mode: %d", r2.Mode))
+
+		fmt.Println(fmt.Sprintf("Mode: %s", printMode(int(r2.Mode))))
 
 		r3, err := c.GetTime(ctx, &pb.Empty{})
 		if err != nil {
@@ -291,21 +367,35 @@ func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 }
 
 func (r *StsConfigReconciler) query_gpsd(svc_str string) {
-	time.Sleep(30 * time.Second)
+	var conn net.Conn
+	var err error
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s-gpsd:2947", svc_str))
-	if err != nil {
-		fmt.Println(fmt.Sprintf("did not connect: %v", err))
+	for {
+		conn, err = net.Dial("tcp", svc_str)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Dial failed: %s: %v", svc_str, err))
+		} else {
+			break
+		}
+		time.Sleep(5 * time.Second)
 	}
 
-	fmt.Println(fmt.Sprintf("Connected to: %s-gpsd:2947", svc_str))
+	fmt.Println(fmt.Sprintf("Connected to: %s", svc_str))
 
 	for {
 		fmt.Fprintf(conn, "?POLL;")
-		status, _ := bufio.NewReader(conn).ReadString('\n')
+		rsp, _ := bufio.NewReader(conn).ReadString('\n')
 
-		fmt.Println(status)
-
+		if len(rsp) < 1 {
+			fmt.Printf("Bad GPS Read: %s\n", rsp)
+		} else {
+			var status GPSStatusRsp
+			err := json.Unmarshal([]byte(rsp), &status)
+			if err != nil {
+				fmt.Println("Error occured during unmarshaling.")
+			}
+			fmt.Printf("Status Struct: %#v\n", status.Tpvs)
+		}
 		time.Sleep(30 * time.Second)
 	}
 }
