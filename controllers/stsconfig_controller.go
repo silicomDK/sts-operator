@@ -173,10 +173,12 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	//matches := make(map[string]string, 3)
-	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present"] = "true"
-	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d0.present"] = "true"
-	//matches["feature.node.kubernetes.io/pci-0200_8086_1591_1374_02de.present"] = "true"
+	// FIXME!!!! ONLY SUPPORT FOR STS2 for NOW
+	//labelsToMatch := &client.MatchingLabels{
+	//	"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present": "true",
+	//"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d0.present": "true",
+	//"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02de.present": "true",
+	//}
 
 	for _, stsConfig := range stsConfigList.Items {
 
@@ -189,6 +191,8 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			reqLogger.Error(err, "Can't retreive NodeList")
 			return ctrl.Result{}, err
 		}
+
+		reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
 
 		statusList := stsv1alpha1.StsConfigStatus{}
 		cfgTemplate := &StsConfigTemplate{}
