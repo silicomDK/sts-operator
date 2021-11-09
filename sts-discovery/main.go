@@ -32,65 +32,59 @@ func labelNode() {
 
 	// mode.sts.silicom.com/master
 	// mode.sts.silicom.com/boundary
-	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{LabelSelector: "feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present"})
-	if err != nil {
-		panic(err.Error())
+	node, err2 := clientset.CoreV1().Nodes().Get(context.Background(), os.Getenv("NODE_NAME"), metav1.GetOptions{})
+	if err2 != nil {
+		panic(err2.Error())
+		return
 	}
 
-	fmt.Printf("There are %d nodes in the cluster with STS2 card\n", len(nodes.Items))
-
-	for _, node := range nodes.Items {
-		if node.Name != os.Getenv("NODE_NAME") {
-			continue
+	for name, _ := range node.Labels {
+		if strings.Contains(name, "iface.sts.silicom.com") {
+			fmt.Printf("Removing %s\n", name)
+			delete(node.Labels, name)
 		}
-		for name, _ := range node.Labels {
-			if strings.Contains(name, "iface.sts.silicom.com") {
-				fmt.Printf("Removing %s\n", name)
-				delete(node.Labels, name)
-			}
-		}
+	}
 
-		//node.Annotations["mode.sts.silicom.com/profile1"] = "enp2s0f0"
-		//node.Annotations["mode.sts.silicom.com/profile2"] = "enp2s0f1,enp2s0f02"
+	//node.Annotations["mode.sts.silicom.com/profile1"] = "enp2s0f0"
+	//node.Annotations["mode.sts.silicom.com/profile2"] = "enp2s0f1,enp2s0f02"
+	_, err = clientset.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{})
+	if err != nil {
+		panic(err.Error())
+		return
+	}
 
-		_, err := clientset.CoreV1().Nodes().Update(context.Background(), &node, metav1.UpdateOptions{})
+	out, err := exec.Command("lspci", "-n", "-d", "8086:1591").Output()
+	if err != nil {
+		fmt.Errorf("error with lspci %v", err)
+		return
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(out)))
+	for scanner.Scan() {
+		id := strings.Split(scanner.Text(), " ")
+		path := fmt.Sprintf("/sys/bus/pci/devices/0000:%s/net/*", id[0])
+
+		res, _ := filepath.Glob(path)
+		iface := string(filepath.Base(res[0]))
+
+		out, err := exec.Command("ip", "link", "show", "dev", iface).Output()
 		if err != nil {
+			fmt.Errorf("Error with ip link %v", err)
 			return
 		}
 
-		out, err := exec.Command("lspci", "-n", "-d", "8086:1591").Output()
-		if err != nil {
-			fmt.Errorf("error with lspci %v", err)
-			return
+		if strings.Contains(string(out), "state UP") {
+			node.Labels[fmt.Sprintf("iface.sts.silicom.com/%s", iface)] = "up"
+		} else {
+			node.Labels[fmt.Sprintf("iface.sts.silicom.com/%s", iface)] = "down"
 		}
 
-		scanner := bufio.NewScanner(strings.NewReader(string(out)))
-		for scanner.Scan() {
-			id := strings.Split(scanner.Text(), " ")
-			path := fmt.Sprintf("/sys/bus/pci/devices/0000:%s/net/*", id[0])
+		fmt.Printf("Adding %s\n", iface)
+	}
 
-			res, _ := filepath.Glob(path)
-			iface := string(filepath.Base(res[0]))
-
-			out, err := exec.Command("ip", "link", "show", "dev", iface).Output()
-			if err != nil {
-				fmt.Errorf("Error with ip link %v", err)
-				return
-			}
-
-			if strings.Contains(string(out), "state UP") {
-				node.Labels[fmt.Sprintf("iface.sts.silicom.com/%s", iface)] = "up"
-			} else {
-				node.Labels[fmt.Sprintf("iface.sts.silicom.com/%s", iface)] = "down"
-			}
-
-			fmt.Printf("Adding %s\n", iface)
-		}
-
-		_, err = clientset.CoreV1().Nodes().Update(context.TODO(), &node, metav1.UpdateOptions{})
-		if err != nil {
-			return
-		}
+	_, err = clientset.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
+	if err != nil {
+		return
 	}
 }
 

@@ -173,17 +173,10 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	// FIXME!!!! ONLY SUPPORT FOR STS2 for NOW
-	//labelsToMatch := &client.MatchingLabels{
-	//	"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present": "true",
-	//"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d0.present": "true",
-	//"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02de.present": "true",
-	//}
-
 	for _, stsConfig := range stsConfigList.Items {
 
 		nodeList := &v1.NodeList{}
-		err := r.List(ctx, nodeList, client.MatchingLabels(map[string]string{"feature.node.kubernetes.io/pci-0200_8086_1591_1374_02d8.present": "true"}))
+		err := r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return ctrl.Result{}, nil
