@@ -233,8 +233,7 @@ spec:
         securityContext:
           privileged: true
 {{- if .EnableGPS }}
-      - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
-        command: [ "/usr/bin/run-gpsd.sh" ]
+      - image: {{.Spec.ImageRegistry}}/gpsd:v3.23
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
         readinessProbe:
