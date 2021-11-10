@@ -160,7 +160,7 @@ spec:
       serviceAccount: {{.Name}}
       hostNetwork: true
       containers:
-      - image: {{.Spec.ImageRegistry}}/phc2sys:latest
+      - image: {{.Spec.ImageRegistry}}/phc2sys:v3.1.1
         command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always

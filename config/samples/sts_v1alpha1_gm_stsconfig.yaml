@@ -2,17 +2,22 @@ apiVersion: sts.silicom.com/v1alpha1
 kind: StsConfig
 metadata:
   name: gm-1
+  namespace: sts-silicom
 spec:
-  name: gm-1
+  namespace: sts-silicom
+  imageRegistry: quay.io/silicom
   nodeSelector:
-    mode.sts.silicom.com/gm-1: ""
-  mode: gm
-  namespace: gm-1
+    mode.sts.silicom.com/gm-1: "true"
+  stsVersion: 2.0.1.0
+  mode: T-GM.8275.1
   interfaces:
     - ethName: enp2s0f0
-      synce: true
+      synce: 1
       holdoff: 500
+      mode: Master
+      ethPort: 0
     - ethName: enp2s0f1
-      synce: true
+      synce: 1
       holdoff: 500
-
+      mode: Master
+      ethPort: 1

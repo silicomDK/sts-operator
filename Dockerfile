@@ -1,21 +1,21 @@
 # Build the manager binary
-FROM golang:1.16 as builder
+FROM golang:1.17 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod.int go.mod
+COPY go.mod go.mod
 COPY go.sum go.sum
-COPY pkg/ pkg/
+COPY api/ api/
+COPY grpc/ grpc/
 
 #RUN go mod tidy
 
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download -x
+RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
-COPY api/ api/
 COPY controllers/ controllers/
 
 # Build

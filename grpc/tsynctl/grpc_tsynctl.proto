@@ -1,0 +1,168 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "grpc_tsynctl/grpc_tsynctl";
+option java_multiple_files = true;
+option java_package = "io.grpc";
+option java_outer_classname = "TsyncProto";
+
+package grpc_tsynctl;
+
+// The TsynctlGrpc service definition.
+service TsynctlGrpc {
+	rpc GetMode (Empty) returns (MessageReply) {}
+	rpc GetTime (Empty) returns (TimeReply) {}
+	rpc GetAlarms (Empty) returns (stream AlarmReply) {}
+	rpc GetStat (StatRequest) returns (StatReply) {}
+	rpc ResetStat (ResetStatRequest) returns (ResetStatReply) {}
+	rpc GetStatus (Empty) returns (MessageReply) {}
+	rpc GetClockClass (Empty) returns (MessageReply) {}
+	rpc GetInfo (Empty) returns (InfoReply) {}
+	rpc GetParam (ParamRequest) returns (ParamReply) {}
+	rpc GetParams (Empty) returns (ParamsReply) {}
+}
+
+// Request Messages
+message Empty {
+}
+
+message StatRequest {
+	int32	port = 1;
+	int32	msg = 2;
+}
+
+message ResetStatRequest {
+	int32	port = 1;
+}
+
+message ParamRequest {
+	int32	type = 1;
+}
+
+// Reply Messages
+message MessageReply {
+	int32	val = 1;
+	string	message = 2;
+}
+
+message TimeReply {
+	int64	val = 1;
+	string	message = 2;
+}
+
+message AlarmReply {
+	int32	type = 1;
+	int32	val = 2;
+	int32	prev = 3;
+}
+
+message StatReply {
+	int32	stream = 1;
+	string	msg = 2;
+	uint32	rx = 3;
+	uint32	drop = 4;
+	uint32	lost = 5;
+	uint32	tx = 6;
+}
+
+message ResetStatReply {
+	int32	status = 1;
+}
+
+message InfoReply {
+	int32	FwIdByte0 = 1;
+	int32	FwIdByte1 = 2;
+	int32	FwVerByte0 = 3;
+	int32	FwVerByte1 = 4;
+	int32	FwVerByte2 = 5;
+	int32	FwBuildByte0 = 6;
+	int32	FwBuildByte1 = 7;
+	int32	FwBuildByte2 = 8;
+	int32	EnvVerByte0 = 9;
+	int32	EnvVerByte1 = 10;
+	int32	LogVerByte0 = 11;
+	int32	LogVerByte1 = 12;
+	int32	OsVerByte0 = 13;
+	int32	OsVerByte1 = 14;
+	int32	OsVerByte2 = 15;
+	int32	BtlVerByte0 = 16;
+	int32	BtlVerByte1 = 17;
+	int32	BtlVerByte2 = 18;
+	int32	BtlVerByte3 = 19;
+	int32	BtlType = 20;
+	int32	BtlCapByte0 = 21;
+	int32	BtlCapByte1 = 22;
+	int32	BtlCapByte2 = 23;
+	int32	BtlCapByte3 = 24;
+}
+
+message ParamReply {
+	int32	type = 1;
+	int32	val = 2;
+}
+
+message ParamsReply {
+	int32	profile = 1;
+	int32	domain = 2;
+	int32	forward = 3;
+	int32	twoStep = 4;
+	int32	priority2 = 5;
+	int32	ppsOut = 6;
+	int32	mhz10Out = 7;
+	int32	syncePort = 8;
+	int32	syncOpt = 9;
+	int32	ql1 = 10;
+	int32	ql2 = 11;
+	int32	ql3 = 12;
+	int32	ql4 = 13;
+	int32	ql5 = 14;
+	int32	ql6 = 15;
+	int32	ql7 = 16;
+	int32	ql8 = 17;
+	int32	ql9 = 18;
+	int32	ql10 = 19;
+	int32	ql11 = 20;
+	int32	ql12 = 21;
+	int32	holdoff1 = 22;
+	int32	holdoff2 = 23;
+	int32	holdoff3 = 24;
+	int32	holdoff4 = 25;
+	int32	holdoff5 = 26;
+	int32	holdoff6 = 27;
+	int32	holdoff7 = 28;
+	int32	holdoff8 = 29;
+	int32	holdoff9 = 30;
+	int32	holdoff10 = 31;
+	int32	holdoff11 = 32;
+	int32	holdoff12 = 33;
+	int32	synceCpu = 34;
+	int32	swTs = 35;
+	int32	inband = 36;
+	int32	dumpRegs = 37;
+	int32	rawTs = 38;
+	int32	ptpCount = 39;
+	int32	ptpData = 40;
+	int32	devStatus = 41;
+	int32	aprLevel = 42;
+	int32	traceModule = 43;
+	int32	traceLevel = 44;
+	int32	tracePtp = 45;
+	int32	ppsMode = 46;
+	int32	mhz10Mode = 47;
+	int32	slavePortMask = 48;
+	int32	masterPortMask = 49;
+	int32	syncePortMask = 50;
+}

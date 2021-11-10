@@ -32,8 +32,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	pb "github.com/silicomdk/sts-grpc/tsynctl"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
+	pb "github.com/silicomdk/sts-operator/grpc/tsynctl"
 	grpc "google.golang.org/grpc"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -333,7 +333,7 @@ func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 	defer conn.Close()
 
 	fmt.Println(fmt.Sprintf("Connected to: %s", svc_str))
-	c := pb.NewTsynctlClient(conn)
+	c := pb.NewTsynctlGrpcClient(conn)
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -342,20 +342,20 @@ func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 		if err != nil {
 			fmt.Println(fmt.Sprintf("could not get status: %v", err))
 		}
-		fmt.Println(fmt.Sprintf("Status: %s", printStatus(int(r.Status))))
+		fmt.Println(fmt.Sprintf("Status: %s", r.Message))
 
 		r2, err := c.GetMode(ctx, &pb.Empty{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("could not get mode: %v", err))
 		}
 
-		fmt.Println(fmt.Sprintf("Mode: %s", printMode(int(r2.Mode))))
+		fmt.Println(fmt.Sprintf("Mode: %s", r2.Message))
 
 		r3, err := c.GetTime(ctx, &pb.Empty{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("could not get time: %v", err))
 		}
-		fmt.Println(fmt.Sprintf("Time: %s", time.Unix(int64(r3.Time), 0).String()))
+		fmt.Println(fmt.Sprintf("Time: %s", r3.Message))
 
 		cancel()
 
