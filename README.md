@@ -1,6 +1,12 @@
-# Silicom STS Operator
+# Silicom STS Special Resource Usage
 ![alt text](spec/sts-sro.png "Special Resource Operator")
+
+# Silicom STS Operator
 ![alt text](spec/sts-operator.png "STS Overview")
+
+# Silicom STS Operator deployments
+![alt text](spec/sts-deployments.png "STS Deployments")
+
 ## Table of Contents
 - [STS Operator](#sts-operator)
 - [STS Discovery](#sts-discovery)
