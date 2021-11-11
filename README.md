@@ -31,15 +31,17 @@ spec:
   name: gm-1
   nodeSelector:
     mode.sts.silicom.com/gm-1: ""
-  mode: gm
+  mode: T-GM.8275.1
   namespace: sts-silicom
   interfaces:
     - ethName: enp2s0f0
       synce: true
       holdoff: 500
+      mode: Slave
     - ethName: enp2s0f1
       synce: true
       holdoff: 500
+      mode: Master
 
 ```
 
@@ -60,10 +62,12 @@ items:
     - ethName: enp2s0f0
       holdoff: 500
       synce: true
+      mode: Slave
     - ethName: enp2s0f1
       holdoff: 500
       synce: true
-    mode: gm
+      mode: Master
+    mode: T-GM.8275.1
     name: gm-1
     namespace: sts-silicom
     nodeSelector:
