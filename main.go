@@ -66,7 +66,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "ccd94a0b.silicom.com",
+		LeaderElectionID:       "sts.silicom.com",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
