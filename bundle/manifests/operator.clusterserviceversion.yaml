@@ -93,6 +93,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: operator.v0.0.2
   namespace: placeholder
+  description: Short description
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -187,7 +188,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: quay.io/silicom/sts-operator:0.0.2
+                image: controller:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -259,13 +260,15 @@ spec:
   - supported: true
     type: AllNamespaces
   keywords:
-  - sts
-  - silicom
-  - ptp
+  - operator
   links:
-  - name: Operator
-    url: https://operator.domain
+  - name: STS Operator
+    url: https://sts.silicom.com
+  maintainers:
+  - email: rmr@silicom.dk
+    name: Ryan M. Raasch
   maturity: alpha
   provider:
-    name: Silicom
+    name: Silicom Ltd.
+    url: https://silicom.com
   version: 0.0.2
