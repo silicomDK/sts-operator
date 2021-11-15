@@ -4,8 +4,9 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: operator.v0.0.0
+  name: sts-operator.v0.0.1
   namespace: placeholder
+  description: This is short description
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -20,7 +21,20 @@ spec:
       kind: StsNode
       name: stsnodes.sts.silicom.com
       version: v1alpha1
-  description: handles silicom sts ptp pci cards
+  description: |
+    Silicom STS line card for 4G and 5G NIC enable real-time data transmission
+    with high timing accuracy at the lowest cost to power 5G DRAN and CRAN edge
+    deployments.
+
+    * Support 1588/PTP over IPv4 / IPV6, IEEE1588v2
+    * Support SyncE /ITU-T G.8262
+    * T-BC/T-TSC Boundary Clock and TSC Slave Clock /G.8273.2
+    * T-GM Grand Master /G.8273.1 per G.8275.1 PTP Profile
+    * PRTC Primary Reference Time Clock Class B/G.8272
+    * T-TC Transparent Clock /G.8273.3
+    * 1588 Software Stack and Servo Software in x86
+
+    https://www.silicom-usa.com/pr/server-adapters/networking-adapters/10-gigabit-ethernet-networking-adapters/p410g8ts81-timesync-server-adapter/
   displayName: sts-operator
   icon:
   - base64data: ""
@@ -43,9 +57,12 @@ spec:
   - silicom
   - ptp
   links:
-  - name: Operator
-    url: https://operator.domain
+  - name: Silicom Ltd.
+    url: https://silicom.com
+  maintainers:
+  - email: rmr@silicom.dk
+    name: Ryan M. Raasch
   maturity: alpha
   provider:
     name: Silicom
-  version: 0.0.0
+  version: 0.0.1
