@@ -2,11 +2,99 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsConfig",
+          "metadata": {
+            "name": "bc-1",
+            "namespace": "sts-silicom"
+          },
+          "spec": {
+            "imageRegistry": "quay.io/silicom",
+            "interfaces": [
+              {
+                "ethName": "enp2s0f0",
+                "ethPort": 0,
+                "holdoff": 500,
+                "mode": "Slave",
+                "synce": 1
+              },
+              {
+                "ethName": "enp2s0f1",
+                "ethPort": 1,
+                "holdoff": 500,
+                "mode": "Master",
+                "synce": 1
+              },
+              {
+                "ethName": "enp2s0f2",
+                "ethPort": 2,
+                "holdoff": 500,
+                "mode": "Master",
+                "synce": 1
+              }
+            ],
+            "mode": "T-TBC.8275.1",
+            "namespace": "sts-silicom",
+            "nodeSelector": {
+              "mode.sts.silicom.com/bc-1": "true"
+            },
+            "stsVersion": "2.0.1.0"
+          }
+        },
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsConfig",
+          "metadata": {
+            "name": "gm-1",
+            "namespace": "sts-silicom"
+          },
+          "spec": {
+            "imageRegistry": "quay.io/silicom",
+            "interfaces": [
+              {
+                "ethName": "enp2s0f0",
+                "ethPort": 0,
+                "holdoff": 500,
+                "mode": "Master",
+                "synce": 1
+              },
+              {
+                "ethName": "enp2s0f1",
+                "ethPort": 1,
+                "holdoff": 500,
+                "mode": "Master",
+                "synce": 1
+              }
+            ],
+            "mode": "T-GM.8275.1",
+            "namespace": "sts-silicom",
+            "nodeSelector": {
+              "mode.sts.silicom.com/gm-1": "true"
+            },
+            "stsVersion": "2.0.1.0"
+          }
+        },
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsNode",
+          "metadata": {
+            "name": "stsnode-sample"
+          },
+          "spec": {
+            "foo": "bar"
+          }
+        }
+      ]
     capabilities: Basic Install
-  name: sts-operator.v0.0.1
+    categories: OpenShift Optional
+    containerImage: quay.io/silicom/siltsyncd
+    description: Short description of the STS card
+    repository: github.com/silicomdk/sts-operator
+  name: sts-operator.v0.0.2
   namespace: placeholder
-  description: This is short description
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -35,6 +123,9 @@ spec:
     * 1588 Software Stack and Servo Software in x86
 
     https://www.silicom-usa.com/pr/server-adapters/networking-adapters/10-gigabit-ethernet-networking-adapters/p410g8ts81-timesync-server-adapter/
+
+    Details about the Operator
+    Details the prerequisites for enabling the Operator
   displayName: sts-operator
   icon:
   - base64data: ""
@@ -57,6 +148,10 @@ spec:
   - silicom
   - ptp
   links:
+  - name: GitHub Repository
+    url: https://github.com/silicomDK/sts-operator
+  - name: Github SRO Helm Charts
+    url: https://github.com/silicomDK/sts2-charts
   - name: Silicom Ltd.
     url: https://silicom.com
   maintainers:
@@ -64,5 +159,6 @@ spec:
     name: Ryan M. Raasch
   maturity: alpha
   provider:
-    name: Silicom
-  version: 0.0.1
+    name: Silicom Ltd.
+    url: https://silicom.com
+  version: 0.0.2
