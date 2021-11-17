@@ -11,7 +11,7 @@ data:
       port: 9443
     leaderElection:
       leaderElect: true
-      resourceName: ccd94a0b.silicom.com
+      resourceName: sts.silicom.com
 kind: ConfigMap
 metadata:
-  name: operator-manager-config
+  name: sts-manager-config
