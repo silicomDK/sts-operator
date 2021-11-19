@@ -77,42 +77,6 @@ type TPV struct {
 	Lon  float32 `json:"lon"`
 }
 
-const (
-	BC             = 1
-	GM             = 2
-	SC             = 3
-	STATUS_NORMAL  = 1
-	STATUS_INIT    = 2
-	STATUS_BUSY    = 3
-	STATUS_INVALID = 4
-)
-
-func printMode(s int) string {
-	switch s {
-	case GM:
-		return "T-GM.8275.1"
-	case BC:
-		return "T-BC-8275.1"
-	case SC:
-		return "T-TSC.8275.1"
-	}
-	return fmt.Sprintf("unknown: %d", s)
-}
-
-func printStatus(s int) string {
-	switch s {
-	case STATUS_NORMAL:
-		return "Normal"
-	case STATUS_INIT:
-		return "Initializing"
-	case STATUS_BUSY:
-		return "Busy"
-	case STATUS_INVALID:
-		return "Invalid"
-	}
-	return fmt.Sprintf("unknown: %d", s)
-}
-
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
 
 	cfg.SlavePortMask = 0
@@ -133,7 +97,7 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 }
 
 //+kubebuilder:rbac:groups="",resources=services;nodes;configmaps;serviceaccounts;namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,resourceNames=privileged,verbs=use

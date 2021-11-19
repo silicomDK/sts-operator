@@ -232,7 +232,8 @@ spec:
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
-          - rolebindings
+          - clusterrolebindings
+          - clusterroles
           verbs:
           - create
           - delete
