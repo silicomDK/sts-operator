@@ -23,7 +23,7 @@ spec:
         control-plane: controller-manager
     spec:
       securityContext:
-        runAsNonRoot: true
+        runAsNonRoot: false
       containers:
       - command:
         - /manager
@@ -32,7 +32,7 @@ spec:
         image: controller:latest
         name: manager
         securityContext:
-          allowPrivilegeEscalation: false
+          allowPrivilegeEscalation: true
         livenessProbe:
           httpGet:
             path: /healthz
