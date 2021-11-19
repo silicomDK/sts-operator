@@ -82,6 +82,18 @@ rules:
 - apiGroups:
   - sts.silicom.com
   resources:
+  - stsconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
   - stsconfigs/finalizers
   verbs:
   - update
@@ -93,3 +105,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsnodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

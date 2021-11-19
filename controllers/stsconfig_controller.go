@@ -140,6 +140,8 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=sts.silicom.com,resources=stsnodes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=sts.silicom.com,resources=stsconfigs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
