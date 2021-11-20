@@ -91,7 +91,7 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:v0.0.1
+    containerImage: quay.io/silicom/sts-operator:v0.0.2
     createdAt: 2021-11-17T10:21:24 CET
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
@@ -359,6 +359,7 @@ spec:
                 command:
                 - /manager
                 image: quay.io/silicom/sts-operator:v0.0.1
+                imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
                     path: /healthz

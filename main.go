@@ -17,20 +17,35 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
+	"context"
 	"flag"
+	"fmt"
+	"html/template"
+	"io/ioutil"
 	"os"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"regexp"
+	"strings"
 
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
 	"github.com/silicomdk/sts-operator/controllers"
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
+
+type StsDiscovery struct {
+	Namespace     string
+	ImageRegistry string
+}
 
 var (
 	scheme   = runtime.NewScheme()
@@ -92,9 +107,80 @@ func main() {
 		os.Exit(1)
 	}
 
+	deployDiscovery("sts-silicom", mgr.GetClient())
+
 	setupLog.Info("starting StsConfig manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func deployDiscovery(ns string, c client.Client) error {
+	var buff bytes.Buffer
+	var objects []client.Object
+	configDiscovery := &StsDiscovery{}
+	configDiscovery.Namespace = "sts-silicom"
+	configDiscovery.ImageRegistry = "quay.io/silicom"
+
+	content, err := ioutil.ReadFile("/assets/sts-discovery.yaml")
+	if err != nil {
+		fmt.Println("ERROR: Loading sts-discovery.yaml file")
+		return err
+	}
+
+	t, err := template.New("asset").Option("missingkey=error").Parse(string(content))
+	if err != nil {
+		fmt.Println("ERROR: New template")
+		return err
+	}
+
+	err = t.Execute(&buff, configDiscovery)
+	if err != nil {
+		fmt.Println("ERROR: Template execute failure")
+		return err
+	}
+
+	rx := regexp.MustCompile("\n-{3}")
+	objectsDefs := rx.Split(buff.String(), -1)
+
+	for _, objectDef := range objectsDefs {
+		obj := unstructured.Unstructured{}
+		r := strings.NewReader(objectDef)
+		decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
+		err := decoder.Decode(&obj)
+		if err != nil {
+			fmt.Println("ERROR: Decoding YAML failure")
+			return err
+		}
+		objects = append(objects, &obj)
+	}
+
+	for _, obj := range objects {
+		fmt.Println("Object")
+		gvk := obj.GetObjectKind().GroupVersionKind()
+		old := &unstructured.Unstructured{}
+		old.SetGroupVersionKind(gvk)
+		key := client.ObjectKeyFromObject(obj)
+
+		if err := c.Get(context.TODO(), key, old); err != nil {
+			if err := c.Create(context.TODO(), obj); err != nil {
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				if !equality.Semantic.DeepDerivative(obj, old) {
+					obj.SetResourceVersion(old.GetResourceVersion())
+					if err := c.Update(context.TODO(), obj); err != nil {
+						fmt.Println("ERROR: Update failed", "key", key, "GroupVersionKind", gvk)
+						return err
+					}
+					fmt.Println("Object updated", "key", key, "GroupVersionKind", gvk)
+				} else {
+					fmt.Println("Object has not changed", "key", key, "GroupVersionKind", gvk)
+				}
+			}
+		}
+	}
+	return nil
 }

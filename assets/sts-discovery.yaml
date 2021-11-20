@@ -1,0 +1,122 @@
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sts-discovery
+  namespace: {{.Namespace}}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sts-discovery
+  namespace: {{.Namespace}}
+rules:
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsnodes
+  verbs:
+  - get
+  - list
+  - update
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sts-discovery
+  namespace: {{.Namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sts-discovery
+subjects:
+- kind: ServiceAccount
+  name: sts-discovery
+  namespace: {{.Namespace}}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sts-discovery
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - update
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sts-discovery
+subjects:
+- kind: ServiceAccount
+  name: sts-discovery
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: sts-discovery
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: sts-discovery
+  name: sts-discovery
+  namespace: {{.Namespace}}
+  annotations:
+    openshift.io/scc: silicom-sts
+spec:
+  selector:
+    matchLabels:
+      app: sts-discovery
+  template:
+    metadata:
+      # Mark this pod as a critical add-on; when enabled, the critical add-on scheduler
+      # reserves resources for critical add-on pods so that they can be rescheduled after
+      # a failure.  This annotation works in tandem with the toleration below.
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: sts-discovery
+    spec:
+      nodeSelector:
+        feature.node.kubernetes.io/custom-silicom.sts.devices: "true"
+      serviceAccount: sts-discovery
+      hostNetwork: true
+      containers:
+      - image: {{.ImageRegistry}}/sts-discovery:v0.0.1
+        imagePullPolicy: Always
+        name: sts-discovery-ctr
+        securityContext:
+          privileged: true
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        args:
+        - --zap-log-level=10
