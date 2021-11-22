@@ -299,34 +299,37 @@ func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
 
 	conn, err := grpc.Dial(svc_str, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Could not connect: %v", err))
+		fmt.Printf("Could not connect: %v", err)
 	}
 	defer conn.Close()
 
-	fmt.Println(fmt.Sprintf("Connected to: %s", svc_str))
-	c := pb.NewTsynctlGrpcClient(conn)
+	fmt.Printf("Connected to: %s", svc_str)
+	client := pb.NewTsynctlGrpcClient(conn)
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		message := &pb.MessageReply{}
+		timeReply := &pb.TimeReply{}
+		var err error
 
-		r, err := c.GetStatus(ctx, &pb.Empty{})
+		message, err = client.GetStatus(ctx, &pb.Empty{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("could not get status: %v", err))
+			fmt.Printf("could not get status: %v", err)
 		}
-		fmt.Println(fmt.Sprintf("Status: %s", r.Message))
+		fmt.Printf("Status: %s\n", message.GetMessage())
 
-		r2, err := c.GetMode(ctx, &pb.Empty{})
+		message, err = client.GetMode(ctx, &pb.Empty{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("could not get mode: %v", err))
+			fmt.Printf("could not get mode: %v", err)
 		}
 
-		fmt.Println(fmt.Sprintf("Mode: %s", r2.Message))
+		fmt.Printf("Mode: %s\n", message.GetMessage())
 
-		r3, err := c.GetTime(ctx, &pb.Empty{})
+		timeReply, err = client.GetTime(ctx, &pb.Empty{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("could not get time: %v", err))
+			fmt.Printf("could not get time: %v", err)
 		}
-		fmt.Println(fmt.Sprintf("Time: %s", r3.Message))
+		fmt.Printf("Time: %s\n", timeReply.GetMessage())
 
 		cancel()
 
@@ -348,7 +351,7 @@ func (r *StsConfigReconciler) query_gpsd(svc_str string) {
 		time.Sleep(5 * time.Second)
 	}
 
-	fmt.Println(fmt.Sprintf("Connected to: %s", svc_str))
+	fmt.Println(fmt.Sprintf("Connected to: %s\n", svc_str))
 
 	for {
 		fmt.Fprintf(conn, "?POLL;")

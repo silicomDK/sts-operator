@@ -30,8 +30,6 @@ func labelNode() {
 		panic(err.Error())
 	}
 
-	// mode.sts.silicom.com/master
-	// mode.sts.silicom.com/boundary
 	node, err2 := clientset.CoreV1().Nodes().Get(context.Background(), os.Getenv("NODE_NAME"), metav1.GetOptions{})
 	if err2 != nil {
 		panic(err2.Error())
@@ -45,8 +43,6 @@ func labelNode() {
 		}
 	}
 
-	//node.Annotations["mode.sts.silicom.com/profile1"] = "enp2s0f0"
-	//node.Annotations["mode.sts.silicom.com/profile2"] = "enp2s0f1,enp2s0f02"
 	_, err = clientset.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{})
 	if err != nil {
 		panic(err.Error())

@@ -120,7 +120,7 @@ func deployDiscovery(ns string, c client.Client) error {
 	var buff bytes.Buffer
 	var objects []client.Object
 	configDiscovery := &StsDiscovery{}
-	configDiscovery.Namespace = "sts-silicom"
+	configDiscovery.Namespace = os.Getenv("NAMESPACE")
 	configDiscovery.ImageRegistry = "quay.io/silicom"
 
 	content, err := ioutil.ReadFile("/assets/sts-discovery.yaml")
@@ -157,7 +157,6 @@ func deployDiscovery(ns string, c client.Client) error {
 	}
 
 	for _, obj := range objects {
-		fmt.Println("Object")
 		gvk := obj.GetObjectKind().GroupVersionKind()
 		old := &unstructured.Unstructured{}
 		old.SetGroupVersionKind(gvk)
