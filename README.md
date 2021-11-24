@@ -30,7 +30,7 @@ metadata:
 spec:
   name: gm-1
   nodeSelector:
-    mode.sts.silicom.com/gm-1: ""
+    sts.silicom.com/config: "gm-1"
   mode: T-GM.8275.1
   namespace: sts-silicom
   interfaces:
@@ -54,7 +54,7 @@ items:
   metadata:
     annotations:
       kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"sts.silicom.com/v1alpha1","kind":"StsConfig","metadata":{"annotations":{},"name":"gm-1","namespace":"sts-silicom"},"spec":{"interfaces":[{"ethName":"enp2s0f0","holdoff":500,"synce":true},{"ethName":"enp2s0f1","holdoff":500,"synce":true}],"mode":"gm","name":"gm-1","namespace":"sts-silicom","nodeSelector":{"mode.sts.silicom.com/gm-1":""}}}
+        {"apiVersion":"sts.silicom.com/v1alpha1","kind":"StsConfig","metadata":{"annotations":{},"name":"gm-1","namespace":"sts-silicom"},"spec":{"interfaces":[{"ethName":"enp2s0f0","holdoff":500,"synce":true},{"ethName":"enp2s0f1","holdoff":500,"synce":true}],"mode":"gm","name":"gm-1","namespace":"sts-silicom","nodeSelector":{"sts.silicom.com/config": "gm-1"}}}
     creationTimestamp: "2021-10-25T13:40:30Z"
     generation: 1
   spec:
@@ -71,7 +71,7 @@ items:
     name: gm-1
     namespace: sts-silicom
     nodeSelector:
-      mode.sts.silicom.com/gm-1: ""
+      sts.silicom.com/config: gm-1
 kind: List
 metadata:
   resourceVersion: ""
