@@ -16,12 +16,7 @@ metadata:
   name: silicom-sts-operator.v0.0.1
   namespace: placeholder
 spec:
-  apiservicedefinitions:
-    required:
-    - group: nfd.openshift.io
-      kind: NodeFeatureDiscovery
-      name: nfd
-      version: v1
+  apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: StsConfig is the Schema for the stsconfigs API
@@ -34,6 +29,17 @@ spec:
       kind: StsNode
       name: stsnodes.sts.silicom.com
       version: v1alpha1
+    required:
+    - description: Special Resource Operator
+      displayName: SRO
+      kind: SpecialResource
+      name: specialresources.sro.openshift.io
+      version: v1beta1
+    - description: Node Feature discovery
+      displayName: NFD
+      kind: NodeFeatureDiscovery
+      name: nfd.openshift.io
+      version: v1
   description: |
     Silicom STS line card for 4G and 5G NIC enable real-time data transmission
     with high timing accuracy at the lowest cost to power 5G DRAN and CRAN edge
