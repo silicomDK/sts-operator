@@ -30,9 +30,12 @@ type TsyncStatus struct {
 }
 
 type GPSStatus struct {
-	Time string `json:"time"`
-	Lat  int    `json:"lat"`
-	Lon  int    `json:"lon"`
+	Time   string `json:"time"`
+	Lat    string `json:"lat"`
+	Lon    string `json:"lon"`
+	Active int    `json:"active"`
+	Device string `json:"device"`
+	Mode   int    `json:"mode"`
 }
 
 // StsNodeSpec defines the desired state of StsNode

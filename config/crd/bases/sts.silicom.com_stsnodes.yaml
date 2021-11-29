@@ -60,15 +60,24 @@ spec:
                 type: array
               gpsStatus:
                 properties:
-                  lat:
+                  active:
                     type: integer
+                  device:
+                    type: string
+                  lat:
+                    type: string
                   lon:
+                    type: string
+                  mode:
                     type: integer
                   time:
                     type: string
                 required:
+                - active
+                - device
                 - lat
                 - lon
+                - mode
                 - time
                 type: object
               tsyncStatus:

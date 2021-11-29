@@ -27,14 +27,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+/*
+{"class":"POLL","time":"2010-06-04T10:31:00.289Z","active":1,
+    "tpv":[{"class":"TPV","device":"/dev/ttyUSB0",
+            "time":"2010-09-08T13:33:06.095Z",
+            "ept":0.005,"lat":40.035093060,
+            "lon":-75.519748733,"track":99.4319,"speed":0.123,"mode":2}],
+*/
 type GPSStatusRsp struct {
-	Tpvs []TPV `json:"tpv"`
+	Tpvs   []TPV  `json:"tpv"`
+	Time   string `json:"time"`
+	Active int    `json:"active"`
 }
 
 type TPV struct {
-	Time string  `json:"time"`
-	Lat  float32 `json:"lat"`
-	Lon  float32 `json:"lon"`
+	Time   string  `json:"time"`
+	Lat    float32 `json:"lat"`
+	Lon    float32 `json:"lon"`
+	Device string  `json:"device"`
+	Mode   int     `json:"mode"`
 }
 
 var (
@@ -125,6 +136,13 @@ func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	cancel()
 }
 
+/*
+{"class":"POLL","time":"2010-06-04T10:31:00.289Z","active":1,
+    "tpv":[{"class":"TPV","device":"/dev/ttyUSB0",
+            "time":"2010-09-08T13:33:06.095Z",
+            "ept":0.005,"lat":40.035093060,
+            "lon":-75.519748733,"track":99.4319,"speed":0.123,"mode":2}],
+*/
 func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	var status GPSStatusRsp
 
@@ -145,6 +163,17 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	err = json.Unmarshal([]byte(rsp), &status)
 	if err != nil {
 		fmt.Println("Error occured during unmarshaling.")
+		return
+	}
+
+	stsNode.Status.GpsStatus.Time = status.Time
+	stsNode.Status.GpsStatus.Active = status.Active
+	if len(status.Tpvs) > 0 {
+		stsNode.Status.GpsStatus.Device = status.Tpvs[0].Device
+		stsNode.Status.GpsStatus.Time = status.Tpvs[0].Time
+		stsNode.Status.GpsStatus.Lat = fmt.Sprintf("%f", status.Tpvs[0].Lat)
+		stsNode.Status.GpsStatus.Lon = fmt.Sprintf("%f", status.Tpvs[0].Lon)
+		stsNode.Status.GpsStatus.Mode = status.Tpvs[0].Mode
 	}
 }
 
