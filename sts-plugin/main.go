@@ -243,7 +243,12 @@ func main() {
 	}
 
 	for {
+		// This will be available from the beginning.
 		query_host(stsNode)
+		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
+			fmt.Printf("Update failed: %v\n", err)
+		}
+
 		query_tsyncd(tsync_svc_str, stsNode)
 		query_gpsd(gpsd_svc_str, stsNode)
 
