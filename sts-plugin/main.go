@@ -38,6 +38,7 @@ type GPSStatusRsp struct {
 	Tpvs   []TPV  `json:"tpv"`
 	Time   string `json:"time"`
 	Active int    `json:"active"`
+	Class  string `json:"class"`
 }
 
 type TPV struct {
@@ -46,6 +47,14 @@ type TPV struct {
 	Lon    float32 `json:"lon"`
 	Device string  `json:"device"`
 	Mode   int     `json:"mode"`
+}
+
+type GpsVersionRsp struct {
+	Class      string `json:"class"`
+	Release    string `json:"release"`
+	Rev        string `json:"rev"`
+	ProtoMajor int    `json:"proto_major"`
+	ProtoMinor int    `json:"proto_minor"`
 }
 
 var (
@@ -145,6 +154,7 @@ func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 */
 func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	var status GPSStatusRsp
+	var gpsRsp GpsVersionRsp
 
 	conn, err := net.Dial("tcp", svc_str)
 	if err != nil {
@@ -153,8 +163,21 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	}
 	defer conn.Close()
 
-	fmt.Fprintf(conn, "?POLL;")
+	// {"class":"VERSION","release":"3.23","rev":"3.23","proto_major":3,"proto_minor":14}
 	rsp, _ := bufio.NewReader(conn).ReadString('\n')
+	if len(rsp) < 1 {
+		fmt.Printf("Bad GPS Read: %s\n", rsp)
+		return
+	}
+
+	err = json.Unmarshal([]byte(rsp), &gpsRsp)
+	if err != nil {
+		fmt.Println("Error occured during gpsRsp unmarshaling.")
+		return
+	}
+
+	fmt.Fprintf(conn, "?POLL;")
+	rsp, _ = bufio.NewReader(conn).ReadString('\n')
 	if len(rsp) < 1 {
 		fmt.Printf("Bad GPS Read: %s\n", rsp)
 		return
@@ -163,6 +186,12 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	err = json.Unmarshal([]byte(rsp), &status)
 	if err != nil {
 		fmt.Println("Error occured during unmarshaling.")
+		return
+	}
+
+	//  {"class":"POLL","time":"2021-11-29T13:46:36.790Z","active":0,
+	if status.Class != "POLL" {
+		fmt.Println(fmt.Sprintf("Error occured during POLL parsing. %s\n", rsp))
 		return
 	}
 
