@@ -17,24 +17,18 @@ limitations under the License.
 package controllers
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
-	"net"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
-	pb "github.com/silicomdk/sts-operator/grpc/tsynctl"
-	grpc "google.golang.org/grpc"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -65,16 +59,6 @@ type StsConfigTemplate struct {
 	ProfileId      int
 	GpsPort        int
 	TsyncPort      int
-}
-
-type GPSStatusRsp struct {
-	Tpvs []TPV `json:"tpv"`
-}
-
-type TPV struct {
-	Time string  `json:"time"`
-	Lat  float32 `json:"lat"`
-	Lon  float32 `json:"lon"`
 }
 
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
@@ -158,7 +142,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 		reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
 
-		statusList := stsv1alpha1.StsConfigStatus{}
 		cfgTemplate := &StsConfigTemplate{}
 		for _, node := range nodeList.Items {
 
@@ -246,31 +229,13 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				}
 			}
 
-			nodeStatus := stsv1alpha1.STSNodeStatus{
-				Name: node.Name,
-				TsyncStatus: stsv1alpha1.TsyncStatus{
-					Status: "unknown",
-					Mode:   stsConfig.Spec.Mode,
-				},
-				GpsStatus: stsv1alpha1.GPSStatus{
-					Time: "unknown",
-					Lon:  0,
-					Lat:  0,
-				},
+			stsNode := &stsv1alpha1.StsNode{}
+			stsNode.Namespace = stsConfig.Namespace
+			stsNode.Name = node.Name
+			if err = r.Create(ctx, stsNode); err != nil {
+				reqLogger.Error(err, "failed to create sts node")
+				return ctrl.Result{}, err
 			}
-			statusList.NodeStatus = append(statusList.NodeStatus, nodeStatus)
-
-			go r.query_tsyncd(fmt.Sprintf("%s-tsyncd:%d", cfgTemplate.ServicePrefix, cfgTemplate.TsyncPort))
-
-			if cfgTemplate.EnableGPS {
-				go r.query_gpsd(fmt.Sprintf("%s-gpsd:%d", cfgTemplate.ServicePrefix, cfgTemplate.GpsPort))
-			}
-		}
-
-		statusList.DeepCopyInto(&stsConfig.Status)
-		if err := r.Status().Update(ctx, &stsConfig); err != nil {
-			reqLogger.Error(err, "Update failed: stsConfig")
-			return ctrl.Result{}, err
 		}
 	}
 
@@ -292,81 +257,4 @@ func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 						Owns(&appsv1.DaemonSet{}).     // StsConfig owns Daemonsets created by it
 						Complete(r)
 	return nil
-}
-
-func (r *StsConfigReconciler) query_tsyncd(svc_str string) {
-	time.Sleep(30 * time.Second)
-
-	conn, err := grpc.Dial(svc_str, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		fmt.Printf("Could not connect: %v", err)
-	}
-	defer conn.Close()
-
-	fmt.Printf("Connected to: %s", svc_str)
-	client := pb.NewTsynctlGrpcClient(conn)
-
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		message := &pb.MessageReply{}
-		timeReply := &pb.TimeReply{}
-		var err error
-
-		message, err = client.GetStatus(ctx, &pb.Empty{})
-		if err != nil {
-			fmt.Printf("could not get status: %v", err)
-		}
-		fmt.Printf("Status: %s\n", message.GetMessage())
-
-		message, err = client.GetMode(ctx, &pb.Empty{})
-		if err != nil {
-			fmt.Printf("could not get mode: %v", err)
-		}
-
-		fmt.Printf("Mode: %s\n", message.GetMessage())
-
-		timeReply, err = client.GetTime(ctx, &pb.Empty{})
-		if err != nil {
-			fmt.Printf("could not get time: %v", err)
-		}
-		fmt.Printf("Time: %s\n", timeReply.GetMessage())
-
-		cancel()
-
-		time.Sleep(30 * time.Second)
-	}
-}
-
-func (r *StsConfigReconciler) query_gpsd(svc_str string) {
-	var conn net.Conn
-	var err error
-
-	for {
-		conn, err = net.Dial("tcp", svc_str)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("Dial failed: %s: %v", svc_str, err))
-		} else {
-			break
-		}
-		time.Sleep(5 * time.Second)
-	}
-
-	fmt.Println(fmt.Sprintf("Connected to: %s\n", svc_str))
-
-	for {
-		fmt.Fprintf(conn, "?POLL;")
-		rsp, _ := bufio.NewReader(conn).ReadString('\n')
-
-		if len(rsp) < 1 {
-			fmt.Printf("Bad GPS Read: %s\n", rsp)
-		} else {
-			var status GPSStatusRsp
-			err := json.Unmarshal([]byte(rsp), &status)
-			if err != nil {
-				fmt.Println("Error occured during unmarshaling.")
-			}
-			fmt.Printf("Status Struct: %#v\n", status.Tpvs)
-		}
-		time.Sleep(30 * time.Second)
-	}
 }

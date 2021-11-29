@@ -77,23 +77,6 @@ type StsConfigSpec struct {
 	SynceCpu int `json:"synceCpu,omitempty"`
 }
 
-type STSNodeStatus struct {
-	Name        string      `json:"name,omitempty"`
-	TsyncStatus TsyncStatus `json:"tsyncStatus,omitempty"`
-	GpsStatus   GPSStatus   `json:"gpsStatus,omitempty"`
-}
-
-type TsyncStatus struct {
-	Mode   string `json:"mode"`
-	Status string `json:"status"`
-}
-
-type GPSStatus struct {
-	Time string `json:"time"`
-	Lat  int    `json:"lat"`
-	Lon  int    `json:"lon"`
-}
-
 type StsInterfaceSpec struct {
 	EthName string `json:"ethName"`
 	EthPort int    `json:"ethPort"`
@@ -120,7 +103,7 @@ type StsInterfaceSpec struct {
 
 // StsConfigStatus defines the observed state of StsConfig
 type StsConfigStatus struct {
-	NodeStatus []STSNodeStatus `json:"nodeStatus,omitempty"`
+	Nodes []string `json:"nodes,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -128,35 +128,9 @@ spec:
           status:
             description: StsConfigStatus defines the observed state of StsConfig
             properties:
-              nodeStatus:
+              nodes:
                 items:
-                  properties:
-                    gpsStatus:
-                      properties:
-                        lat:
-                          type: integer
-                        lon:
-                          type: integer
-                        time:
-                          type: string
-                      required:
-                      - lat
-                      - lon
-                      - time
-                      type: object
-                    name:
-                      type: string
-                    tsyncStatus:
-                      properties:
-                        mode:
-                          type: string
-                        status:
-                          type: string
-                      required:
-                      - mode
-                      - status
-                      type: object
-                  type: object
+                  type: string
                 type: array
             type: object
         type: object

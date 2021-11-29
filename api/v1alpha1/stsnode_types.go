@@ -23,19 +23,37 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type TsyncStatus struct {
+	Mode   string `json:"mode"`
+	Status string `json:"status"`
+	Time   string `json:"time"`
+}
+
+type GPSStatus struct {
+	Time string `json:"time"`
+	Lat  int    `json:"lat"`
+	Lon  int    `json:"lon"`
+}
+
 // StsNodeSpec defines the desired state of StsNode
 type StsNodeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+}
 
-	// Foo is an example field of StsNode. Edit stsnode_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type StsNodeInterfaceStatus struct {
+	EthName string `json:"ethName"`
+	EthPort int    `json:"ethPort"`
+	Status  string `json:"status,omitempty"`
+	Mode    string `json:"mode,omitempty"`
+	PciAddr string `json:"pciAddr"`
 }
 
 // StsNodeStatus defines the observed state of StsNode
 type StsNodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	TsyncStatus   TsyncStatus              `json:"tsyncStatus,omitempty"`
+	GpsStatus     GPSStatus                `json:"gpsStatus,omitempty"`
+	EthInterfaces []StsNodeInterfaceStatus `json:"ethInterfaces,omitempty"`
 }
 
 //+kubebuilder:object:root=true

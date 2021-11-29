@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: sts-discovery
+  name: sts-plugin
   namespace: {{.Namespace}}
 
 ---
@@ -11,13 +11,14 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: sts-discovery
+  name: sts-plugin
   namespace: {{.Namespace}}
 rules:
 - apiGroups:
   - sts.silicom.com
   resources:
   - stsnodes
+  - stsnodes/status
   verbs:
   - get
   - list
@@ -36,15 +37,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sts-discovery
+  name: sts-plugin
   namespace: {{.Namespace}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: sts-discovery
+  name: sts-plugin
 subjects:
 - kind: ServiceAccount
-  name: sts-discovery
+  name: sts-plugin
   namespace: {{.Namespace}}
 
 ---
@@ -52,7 +53,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: sts-discovery
+  name: sts-plugin
 rules:
 - apiGroups:
   - ""
@@ -68,14 +69,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sts-discovery
+  name: sts-plugin
 subjects:
 - kind: ServiceAccount
-  name: sts-discovery
+  name: sts-plugin
   namespace: {{.Namespace}}
 roleRef:
   kind: ClusterRole
-  name: sts-discovery
+  name: sts-plugin
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -84,36 +85,35 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: sts-discovery
-  name: sts-discovery
+    app: sts-plugin
+  name: sts-plugin
   namespace: {{.Namespace}}
   annotations:
     openshift.io/scc: silicom-sts
 spec:
   selector:
     matchLabels:
-      app: sts-discovery
+      app: sts-plugin
   template:
     metadata:
-      # Mark this pod as a critical add-on; when enabled, the critical add-on scheduler
-      # reserves resources for critical add-on pods so that they can be rescheduled after
-      # a failure.  This annotation works in tandem with the toleration below.
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
-        app: sts-discovery
+        app: sts-plugin
     spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-silicom.sts.devices: "true"
-      serviceAccount: sts-discovery
+      serviceAccount: sts-plugin
       hostNetwork: true
       containers:
-      - image: {{.ImageRegistry}}/sts-discovery:v0.0.1
+      - image: {{.ImageRegistry}}/sts-plugin:v0.0.1-dev
         imagePullPolicy: Always
-        name: sts-discovery-ctr
+        name: sts-plugin-ctr
         securityContext:
           privileged: true
         env:
+          - name: GPS_PORT
+            value: "{{.GpsPort}}"
+          - name: TSYNC_PORT
+            value: "{{.TsyncPort}}"
           - name: NODE_NAME
             valueFrom:
               fieldRef:

@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= 0.0.1-dev
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -202,8 +202,8 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
-discovery:
-	cd sts-discovery && docker build . -t quay.io/silicom/sts-discovery:$(VERSION)
+plugin:
+	docker build . -t quay.io/silicom/sts-plugin:v$(VERSION) -f Dockerfile.plugin
 
-discovery-push:
-	docker push quay.io/silicom/sts-discovery:$(VERSION)
+plugin-push:
+	docker push quay.io/silicom/sts-plugin:v$(VERSION)

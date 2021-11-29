@@ -33,6 +33,12 @@ spec:
         imagePullPolicy: Always
         name: manager
         env:
+          - name: GPS_PORT
+            value: "2947"
+          - name: TSYNC_PORT
+            value: "50051"
+          - name: STS_VERSION
+            value: "v0.0.1-dev"
           - name: NAMESPACE
             valueFrom:
               fieldRef:

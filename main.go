@@ -42,9 +42,12 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
-type StsDiscovery struct {
+type StsPlugin struct {
 	Namespace     string
 	ImageRegistry string
+	TsyncPort     int
+	GpsPort       int
+	StsVersion    string
 }
 
 var (
@@ -107,7 +110,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	deployDiscovery("sts-silicom", mgr.GetClient())
+	deployPlugin(os.Getenv("NAMESPACE"), mgr.GetClient())
 
 	setupLog.Info("starting StsConfig manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -116,16 +119,18 @@ func main() {
 	}
 }
 
-func deployDiscovery(ns string, c client.Client) error {
+func deployPlugin(ns string, c client.Client) error {
 	var buff bytes.Buffer
 	var objects []client.Object
-	configDiscovery := &StsDiscovery{}
-	configDiscovery.Namespace = os.Getenv("NAMESPACE")
-	configDiscovery.ImageRegistry = "quay.io/silicom"
+	configPlugin := &StsPlugin{}
+	configPlugin.Namespace = os.Getenv("NAMESPACE")
+	configPlugin.ImageRegistry = "quay.io/silicom"
+	configPlugin.TsyncPort = 50051
+	configPlugin.GpsPort = 2947
 
-	content, err := ioutil.ReadFile("/assets/sts-discovery.yaml")
+	content, err := ioutil.ReadFile("/assets/sts-plugin.yaml")
 	if err != nil {
-		fmt.Println("ERROR: Loading sts-discovery.yaml file")
+		fmt.Println("ERROR: Loading sts-plugin.yaml file")
 		return err
 	}
 
@@ -135,7 +140,7 @@ func deployDiscovery(ns string, c client.Client) error {
 		return err
 	}
 
-	err = t.Execute(&buff, configDiscovery)
+	err = t.Execute(&buff, configPlugin)
 	if err != nil {
 		fmt.Println("ERROR: Template execute failure")
 		return err
