@@ -160,6 +160,22 @@ spec:
       serviceAccount: {{.Name}}
       hostNetwork: true
       containers:
+      - image: {{.Spec.ImageRegistry}}/ts2phys:v1.0.0
+        command: [ "/usr/bin/run-ts2phys.sh" ]
+        name: {{.NodeName}}-ts2phys
+        imagePullPolicy: Always
+        network_mode: host
+        env:
+          - name: WAIT_FOR_GPS
+{{- if .EnableGPS}}
+            value: "true"
+{{- else}}
+            value: "false"
+{{end}}
+          - name: GPS_SERVER
+            value: "0.0.0.0"
+          - name: GPS_PORT
+            value: "{{.GpsPort}}"
       - image: {{.Spec.ImageRegistry}}/phc2sys:v3.1.1
         command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys

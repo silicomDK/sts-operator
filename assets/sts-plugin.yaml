@@ -104,7 +104,7 @@ spec:
       serviceAccount: sts-plugin
       hostNetwork: true
       containers:
-      - image: {{.ImageRegistry}}/sts-plugin:v0.0.1-dev
+      - image: {{.ImageRegistry}}/sts-plugin:v0.0.1
         imagePullPolicy: Always
         name: sts-plugin-ctr
         securityContext:

@@ -38,7 +38,7 @@ spec:
           - name: TSYNC_PORT
             value: "50051"
           - name: STS_VERSION
-            value: "v0.0.1-dev"
+            value: "v0.0.1"
           - name: NAMESPACE
             valueFrom:
               fieldRef:
