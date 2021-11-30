@@ -160,11 +160,16 @@ spec:
       serviceAccount: {{.Name}}
       hostNetwork: true
       containers:
-      - image: {{.Spec.ImageRegistry}}/ts2phys:v1.0.0
-        command: [ "/usr/bin/run-ts2phys.sh" ]
-        name: {{.NodeName}}-ts2phys
+      - image: {{.Spec.ImageRegistry}}/ts2phcs:v1.0.0
+        command: [ "/usr/bin/run-ts2phcs.sh" ]
+        name: {{.NodeName}}-ts2phcs
         imagePullPolicy: Always
         network_mode: host
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
         env:
           - name: WAIT_FOR_GPS
 {{- if .EnableGPS}}
