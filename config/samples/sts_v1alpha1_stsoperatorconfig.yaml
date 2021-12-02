@@ -1,0 +1,11 @@
+apiVersion: sts.silicom.com/v1alpha1
+kind: StsOperatorConfig
+metadata:
+  name: stsoperatorconfig
+  namespace: sts-silicom
+spec:
+  imageRegistry: quay.io/silicom
+  stsVersion: 2.0.1.0
+  iceVersion: 1.6.4
+  grpcSvcPort: 50051
+  gpsSvcPort: 2947

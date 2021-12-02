@@ -33,9 +33,9 @@ spec:
         imagePullPolicy: Always
         name: manager
         env:
-          - name: GPS_PORT
+          - name: GPS_SVC_PORT
             value: "2947"
-          - name: TSYNC_PORT
+          - name: GRPC_SVC_PORT
             value: "50051"
           - name: STS_VERSION
             value: "v0.0.1"

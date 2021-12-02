@@ -14,14 +14,39 @@
 - [Quick Start](#quick-start)
 
 ## STS Operator
-Sts Operator, runs in `sts-silicom` namespace, manages cluster wide STS configurations. It offers `StsConfig` CRDs and creates `tsyncd` to apply node specific STS config.
+Sts Operator, runs in `sts-silicom` namespace, manages cluster wide STS configurations. It offers `StsConfig` and `StsOperatorConfig` CRDs and creates `tsyncd` to apply node specific STS config.
 
-## STS Discovery
-Once NFD operator has labelled the nodes, this daemonset queries the network interfaces and STS specific information and accordingly labels the nodes.
+## STS Discovery daemonset
+Once NFD operator has labelled the nodes, this daemonset queries the network interfaces and STS specific information and accordingly labels the nodes. (feature.node.kubernetes.io/custom-silicom.sts.devices: "true")
+
+## STS daemonset
+This consists of the following daemons on labelled nodes, all of these running in the same pod. Nodes labelled with the sts.silicom.com/config: "gm-1"
+* tsyncd
+* GPSd (if in T-GM.8275.1 mode)
+* ts2phcs
+* phc2sys
+* grpc-tsyncd
+
+## StsOperatorConfig
+Example (default)
+```yaml
+apiVersion: sts.silicom.com/v1alpha1
+kind: StsOperatorConfig
+metadata:
+  name: stsoperatorconfig
+  namespace: sts-silicom
+spec:
+  imageRegistry: quay.io/silicom
+  stsVersion: 2.0.1.0
+  iceVersion: 1.6.4
+  grpcSvcPort: 50051
+  gpsSvcPort: 2947
+
+```
 
 ## StsConfig
-Example
-```
+Example (Grand Master mode)
+```yaml
 apiVersion: sts.silicom.com/v1alpha1
 kind: StsConfig
 metadata:
@@ -76,4 +101,5 @@ kind: List
 metadata:
   resourceVersion: ""
   selfLink: ""
+
 ```

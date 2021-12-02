@@ -208,3 +208,13 @@ plugin:
 
 plugin-push:
 	docker push quay.io/silicom/sts-plugin:v$(IMG_VERSION)
+
+s2i: ice.tgz
+	curl -sL https://github.com/openshift/source-to-image/releases/download/v1.3.1/source-to-image-v1.3.1-a5a77147-linux-amd64.tar.gz -o s2i.tar.gz
+	tar xvf s2i.tar.gz -C bin
+	rm s2i.tar.gz
+
+ice.tgz:
+	- mkdir src
+	curl -sL "https://sourceforge.net/projects/e1000/files/ice%20stable/1.6.4/ice-1.6.4.tar.gz/download" -o ice.tgz
+	tar xvf ice.tgz -C src

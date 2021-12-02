@@ -29,6 +29,11 @@ spec:
       kind: StsNode
       name: stsnodes.sts.silicom.com
       version: v1alpha1
+    - description: StsOperatorConfig is the Schema for the stsoperatorconfigs API
+      displayName: Sts Operator Config
+      kind: StsOperatorConfig
+      name: stsoperatorconfigs.sts.silicom.com
+      version: v1alpha1
     required:
     - description: Discovers STS cards and labels the nodes appropriately.
       displayName: Node Feature Discovery

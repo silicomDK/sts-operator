@@ -212,11 +212,11 @@ func main() {
 	nodeName := os.Getenv("NODE_NAME")
 	namespace := os.Getenv("NAMESPACE")
 
-	tsyncPort, _ := strconv.Atoi(os.Getenv("TSYNC_PORT"))
-	tsync_svc_str := fmt.Sprintf("%s:%d", nodeName, tsyncPort)
+	grpcSvcPort, _ := strconv.Atoi(os.Getenv("GRPC_SVC_PORT"))
+	grpcSvcStr := fmt.Sprintf("%s:%d", nodeName, grpcSvcPort)
 
-	gpsPort, _ := strconv.Atoi(os.Getenv("GPS_PORT"))
-	gpsd_svc_str := fmt.Sprintf("%s:%d", nodeName, gpsPort)
+	gpsSvcPort, _ := strconv.Atoi(os.Getenv("GPS_SVC_PORT"))
+	gpsSvcStr := fmt.Sprintf("%s:%d", nodeName, gpsSvcPort)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -248,8 +248,8 @@ func main() {
 			fmt.Printf("Update failed: %v\n", err)
 		}
 
-		query_tsyncd(tsync_svc_str, stsNode)
-		query_gpsd(gpsd_svc_str, stsNode)
+		query_tsyncd(grpcSvcStr, stsNode)
+		query_gpsd(gpsSvcStr, stsNode)
 
 		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
 			fmt.Printf("Update failed: %v\n", err)

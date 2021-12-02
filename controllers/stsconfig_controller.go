@@ -22,9 +22,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -35,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,8 +56,8 @@ type StsConfigTemplate struct {
 	MasterPortMask int
 	SyncePortMask  int
 	ProfileId      int
-	GpsPort        int
-	TsyncPort      int
+	GpsSvcPort     int
+	GrpcSvcPort    int
 }
 
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
@@ -119,6 +118,18 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	// Fetch the PtpOperatorConfig instance
+	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
+	err = r.Get(ctx, types.NamespacedName{Name: defaultName, Namespace: defaultNamespace}, defaultCfg)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Error(err, "Failed to get default sts config",
+				"Namespace", defaultNamespace, "Name", defaultName)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
 	if err != nil {
 		reqLogger.Error(err, "Loading sts-deployment.yaml file")
@@ -161,24 +172,8 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				cfgTemplate.ProfileId = 3
 			}
 
-			cfgTemplate.GpsPort = 2947
-			if len(os.Getenv("GPS_PORT")) > 1 {
-				i2, err := strconv.Atoi(os.Getenv("GPS_PORT"))
-				if err == nil {
-					fmt.Println(i2)
-				}
-				cfgTemplate.GpsPort = i2
-			}
-
-			cfgTemplate.TsyncPort = 50051
-			if len(os.Getenv("TSYNC_PORT")) > 1 {
-				i2, err := strconv.Atoi(os.Getenv("TSYNC_PORT"))
-				if err == nil {
-					fmt.Println(i2)
-				}
-				cfgTemplate.TsyncPort = i2
-			}
-
+			cfgTemplate.GpsSvcPort = defaultCfg.Spec.GpsSvcPort
+			cfgTemplate.GrpcSvcPort = defaultCfg.Spec.GrpcSvcPort
 			cfgTemplate.NodeName = node.Name
 			cfgTemplate.StsConfig = &stsConfig
 			cfgTemplate.ServicePrefix = node.Name
@@ -232,7 +227,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			stsNode := &stsv1alpha1.StsNode{}
-			stsNode.Namespace = stsConfig.Namespace
+			stsNode.Namespace = defaultCfg.Spec.Namespace
 			stsNode.Name = node.Name
 			if err := r.Get(ctx, req.NamespacedName, stsNode); err != nil {
 				if err = r.Create(ctx, stsNode); err != nil {

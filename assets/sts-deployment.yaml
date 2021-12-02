@@ -107,8 +107,8 @@ spec:
     app: {{.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
-      port: {{.GpsPort}}
-      targetPort: {{.GpsPort}}
+      port: {{.GpsSvcPort}}
+      targetPort: {{.GpsSvcPort}}
 
 ---
 {{end}}
@@ -179,8 +179,8 @@ spec:
 {{end}}
           - name: GPS_SERVER
             value: "0.0.0.0"
-          - name: GPS_PORT
-            value: "{{.GpsPort}}"
+          - name: GPS_SVC_PORT
+            value: "{{.GpsSvcPort}}"
       - image: {{.Spec.ImageRegistry}}/phc2sys:v3.1.1
         command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys
@@ -195,8 +195,8 @@ spec:
 {{end}}
           - name: GPS_SERVER
             value: "0.0.0.0"
-          - name: GPS_PORT
-            value: "{{.GpsPort}}"
+          - name: GPS_SVC_PORT
+            value: "{{.GpsSvcPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev
@@ -241,8 +241,8 @@ spec:
 {{- end}}
           - name: GPS_SERVER
             value: "0.0.0.0"
-          - name: GPS_PORT
-            value: "{{.GpsPort}}"
+          - name: GPS_SVC_PORT
+            value: "{{.GpsSvcPort}}"
         args:
         - --zap-log-level=10
         volumeMounts:
@@ -259,20 +259,20 @@ spec:
         name: {{.NodeName}}-gpsd
         readinessProbe:
           tcpSocket:
-            port: {{.GpsPort}}
+            port: {{.GpsSvcPort}}
           initialDelaySeconds: 15
           periodSeconds: 30
         livenessProbe:
           tcpSocket:
-            port: {{.GpsPort}}
+            port: {{.GpsSvcPort}}
           initialDelaySeconds: 60
           periodSeconds: 10
         ports:
-        - containerPort: {{.GpsPort}}
+        - containerPort: {{.GpsSvcPort}}
           name: {{.ServicePrefix}}-gpsd
         env:
-          - name: GPS_PORT
-            value: "{{.GpsPort}}"
+          - name: GPS_SVC_PORT
+            value: "{{.GpsSvcPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev

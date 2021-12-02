@@ -142,3 +142,29 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

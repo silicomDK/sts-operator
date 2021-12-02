@@ -1,0 +1,20 @@
+# permissions for end users to view stsoperatorconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stsoperatorconfig-viewer-role
+rules:
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs/status
+  verbs:
+  - get

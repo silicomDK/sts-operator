@@ -39,9 +39,6 @@ spec:
                 maximum: 48
                 minimum: 24
                 type: integer
-              imageRegistry:
-                default: quay.io/silicom
-                type: string
               interfaces:
                 items:
                   properties:
@@ -104,9 +101,6 @@ spec:
                 maximum: 3
                 minimum: 1
                 type: integer
-              stsVersion:
-                default: 2.0.0.0
-                type: string
               synceCpu:
                 default: 10
                 maximum: 40

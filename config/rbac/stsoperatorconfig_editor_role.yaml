@@ -1,0 +1,24 @@
+# permissions for end users to edit stsoperatorconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stsoperatorconfig-editor-role
+rules:
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sts.silicom.com
+  resources:
+  - stsoperatorconfigs/status
+  verbs:
+  - get

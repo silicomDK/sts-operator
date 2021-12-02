@@ -28,12 +28,6 @@ type StsConfigSpec struct {
 	Interfaces   []StsInterfaceSpec `json:"interfaces"`
 	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
 
-	// +kubebuilder:default:string=quay.io/silicom
-	ImageRegistry string `json:"imageRegistry,omitempty"`
-
-	// +kubebuilder:default:string="2.0.0.0"
-	StsVersion string `json:"stsVersion,omitempty"`
-
 	// +kubebuilder:validation:Enum=T-GM.8275.1;T-BC-8275.1;T-TSC.8275.1
 	// +kubebuilder:default:="T-GM.8275.1"
 	Mode string `json:"mode,omitempty"`

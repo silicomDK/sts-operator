@@ -12,7 +12,6 @@ metadata:
             "namespace": "sts-silicom"
           },
           "spec": {
-            "imageRegistry": "quay.io/silicom",
             "interfaces": [
               {
                 "ethName": "enp2s0f0",
@@ -40,8 +39,7 @@ metadata:
             "namespace": "sts-silicom",
             "nodeSelector": {
               "sts.silicom.com/config": "bc-1"
-            },
-            "stsVersion": "2.0.1.0"
+            }
           }
         },
         {
@@ -52,7 +50,6 @@ metadata:
             "namespace": "sts-silicom"
           },
           "spec": {
-            "imageRegistry": "quay.io/silicom",
             "interfaces": [
               {
                 "ethName": "enp2s0f0",
@@ -73,8 +70,7 @@ metadata:
             "namespace": "sts-silicom",
             "nodeSelector": {
               "sts.silicom.com/config": "gm-1"
-            },
-            "stsVersion": "2.0.1.0"
+            }
           }
         },
         {
@@ -149,6 +145,21 @@ metadata:
               "time": "Wed, 01 Dec 2021 09:57:10 UTC"
             }
           }
+        },
+        {
+          "apiVersion": "sts.silicom.com/v1alpha1",
+          "kind": "StsOperatorConfig",
+          "metadata": {
+            "name": "stsoperatorconfig",
+            "namespace": "sts-silicom"
+          },
+          "spec": {
+            "gpsSvcPort": 2947,
+            "grpcSvcPort": 50051,
+            "iceVersion": "1.6.4",
+            "imageRegistry": "quay.io/silicom",
+            "stsVersion": "2.0.1.0"
+          }
         }
       ]
     capabilities: Basic Install
@@ -177,6 +188,11 @@ spec:
       displayName: Sts Node
       kind: StsNode
       name: stsnodes.sts.silicom.com
+      version: v1alpha1
+    - description: StsOperatorConfig is the Schema for the stsoperatorconfigs API
+      displayName: Sts Operator Config
+      kind: StsOperatorConfig
+      name: stsoperatorconfigs.sts.silicom.com
       version: v1alpha1
     required:
     - description: Discovers STS cards and labels the nodes appropriately.
@@ -351,6 +367,32 @@ spec:
           - update
           - watch
         - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsoperatorconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsoperatorconfigs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - sts.silicom.com
+          resources:
+          - stsoperatorconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - authentication.k8s.io
           resources:
           - tokenreviews
@@ -396,9 +438,9 @@ spec:
                 command:
                 - /manager
                 env:
-                - name: GPS_PORT
+                - name: GPS_SVC_PORT
                   value: "2947"
-                - name: TSYNC_PORT
+                - name: GRPC_SVC_PORT
                   value: "50051"
                 - name: STS_VERSION
                   value: v0.0.1
