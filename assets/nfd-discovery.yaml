@@ -1,59 +1,44 @@
-# https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.7.0/nfd-worker-daemonset.yaml.template
-apiVersion: nfd.openshift.io/v1
-kind: NodeFeatureDiscovery
-metadata:
-  name: nfd-instance
-  namespace: sts-silicom-sro
-spec:
-  instance: "" # instance is empty by default
-  operand:
-    namespace: sts-silicom-sro
-    image: quay.io/openshift/origin-node-feature-discovery:4.8
-    imagePullPolicy: Always
-  workerConfig:
-    configData: |
-      sources:
-        pci:
-          deviceClassWhitelist:
-          - "0200"
-          - "1200"
-          deviceLabelFields:
-          - "class"
-          - "vendor"
-          - "device"
-          - "subsystem_vendor"
-          - "subsystem_device"
-        usb:
-          deviceClassWhitelist:
-          - "0e"
-          - "ef"
-          - "fe"
-          - "ff"
-          deviceLabelFields:
-          - "class"
-          - "vendor"
-          - "device"
-        custom:
-        - name: "silicom.sts.devices"
-          matchOn:
-            - usbId:
-                vendor: ["1374"]
-                device: ["0001"]
-            - pciId :
-                vendor: ["8086"]
-                device: ["1591"]
-                subsystem_vendor: ["1374"]
-                subsystem_device: ["02d8"]
-                subsystem_device: ["02d0"]
-                subsystem_device: ["02de"]
-        - name: "intel.e810-c.devices"
-          matchOn:
-            - pciId :
-                vendor: ["8086"]
-                device: ["1591"]
-        - name: "ublox.usb.serial"
-          matchOn:
-            - usbId:
-                vendor: ["1546"]
-                device: ["01a9"]
-
+sources:
+  pci:
+    deviceClassWhitelist:
+    - "0200"
+    - "1200"
+    deviceLabelFields:
+    - "class"
+    - "vendor"
+    - "device"
+    - "subsystem_vendor"
+    - "subsystem_device"
+  usb:
+    deviceClassWhitelist:
+    - "0e"
+    - "ef"
+    - "fe"
+    - "ff"
+    deviceLabelFields:
+    - "class"
+    - "vendor"
+    - "device"
+  custom:
+  - name: "silicom.sts.devices"
+    matchOn:
+      - usbId:
+          vendor: ["1374"]
+          device: ["0001"]
+      - pciId :
+          vendor: ["8086"]
+          device: ["1591"]
+          subsystem_vendor: ["1374"]
+          subsystem_device: ["02d8"]
+          subsystem_device: ["02d0"]
+          subsystem_device: ["02de"]
+  - name: "intel.e810-c.devices"
+    matchOn:
+      - pciId :
+          vendor: ["8086"]
+          device: ["1591"]
+  - name: "ublox.usb.serial"
+    matchOn:
+      - usbId:
+          vendor: ["1546"]
+          device: ["01a9"]

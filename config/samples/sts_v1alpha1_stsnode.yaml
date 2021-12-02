@@ -1,7 +1,50 @@
 apiVersion: sts.silicom.com/v1alpha1
 kind: StsNode
 metadata:
-  name: stsnode-sample
+  name: worker2
 spec:
-  # Add fields here
-  foo: bar
+status:
+  ethInterfaces:
+  - ethName: enp2s0f0
+    ethPort: 0
+    pciAddr: "02:00.0"
+    status: down
+  - ethName: enp2s0f1
+    ethPort: 1
+    pciAddr: "02:00.1"
+    status: down
+  - ethName: enp2s0f2
+    ethPort: 2
+    pciAddr: "02:00.2"
+    status: down
+  - ethName: enp2s0f3
+    ethPort: 3
+    pciAddr: "02:00.3"
+    status: down
+  - ethName: enp2s0f4
+    ethPort: 4
+    pciAddr: "02:00.4"
+    status: down
+  - ethName: enp2s0f5
+    ethPort: 5
+    pciAddr: "02:00.5"
+    status: down
+  - ethName: enp2s0f6
+    ethPort: 6
+    pciAddr: "02:00.6"
+    status: down
+  - ethName: enp2s0f7
+    ethPort: 7
+    pciAddr: "02:00.7"
+    status: down
+  gpsStatus:
+    active: 0
+    device: ""
+    lat: ""
+    lon: ""
+    mode: 0
+    time: "2021-12-01T09:57:10.968Z"
+  tsyncStatus:
+    mode: PTP Master Mode
+    status: Normal Status
+    time: Wed, 01 Dec 2021 09:57:10 UTC

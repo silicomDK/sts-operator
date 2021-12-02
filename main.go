@@ -27,6 +27,7 @@ import (
 	"regexp"
 	"strings"
 
+	nfdv1 "github.com/openshift/cluster-nfd-operator/api/v1"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
 	"github.com/silicomdk/sts-operator/controllers"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -35,6 +36,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -48,6 +50,7 @@ type StsPlugin struct {
 	TsyncPort     int
 	GpsPort       int
 	StsVersion    string
+	Version       string
 }
 
 var (
@@ -58,6 +61,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(stsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(nfdv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -110,7 +114,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	deployPlugin(os.Getenv("NAMESPACE"), mgr.GetClient())
+	deployPlugin()
+	deployNfd()
 
 	setupLog.Info("starting StsConfig manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -119,12 +124,70 @@ func main() {
 	}
 }
 
-func deployPlugin(ns string, c client.Client) error {
+func deployNfd() error {
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	nfdOperand := &nfdv1.NodeFeatureDiscovery{}
+	nfdOperand.Name = "nfd-sts-silicom"
+	nfdOperand.Namespace = "sts-silicom"
+	nfdOperand.Spec.Operand.Namespace = "sts-silicom"
+
+	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
+	if err != nil {
+		fmt.Println("ERROR: Loading nfd-discovery.yaml file")
+		return err
+	}
+
+	workerConfig := &nfdv1.ConfigMap{}
+	workerConfig.ConfigData = string(content)
+	nfdOperand.Spec.WorkerConfig = workerConfig
+
+	if err := k8sClient.Get(context.TODO(), client.ObjectKey{
+		Namespace: nfdOperand.Namespace,
+		Name:      nfdOperand.Name,
+	}, nfdOperand); err != nil {
+
+		err = k8sClient.Create(context.TODO(), nfdOperand)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		k8sClient.Update(context.TODO(), nfdOperand)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return nil
+}
+
+func deployPlugin() error {
 	var buff bytes.Buffer
 	var objects []client.Object
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		panic(err.Error())
+	}
+
 	configPlugin := &StsPlugin{}
 	configPlugin.Namespace = os.Getenv("NAMESPACE")
 	configPlugin.ImageRegistry = "quay.io/silicom"
+	configPlugin.Version = "v0.0.1-dev"
 	configPlugin.TsyncPort = 50051
 	configPlugin.GpsPort = 2947
 
@@ -167,15 +230,15 @@ func deployPlugin(ns string, c client.Client) error {
 		old.SetGroupVersionKind(gvk)
 		key := client.ObjectKeyFromObject(obj)
 
-		if err := c.Get(context.TODO(), key, old); err != nil {
-			if err := c.Create(context.TODO(), obj); err != nil {
+		if err := k8sClient.Get(context.TODO(), key, old); err != nil {
+			if err := k8sClient.Create(context.TODO(), obj); err != nil {
 				if err != nil {
 					panic(err)
 				}
 			} else {
 				if !equality.Semantic.DeepDerivative(obj, old) {
 					obj.SetResourceVersion(old.GetResourceVersion())
-					if err := c.Update(context.TODO(), obj); err != nil {
+					if err := k8sClient.Update(context.TODO(), obj); err != nil {
 						fmt.Println("ERROR: Update failed", "key", key, "GroupVersionKind", gvk)
 						return err
 					}

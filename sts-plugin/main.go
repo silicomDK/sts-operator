@@ -243,7 +243,6 @@ func main() {
 	}
 
 	for {
-		// This will be available from the beginning.
 		query_host(stsNode)
 		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
 			fmt.Printf("Update failed: %v\n", err)
@@ -257,5 +256,4 @@ func main() {
 		}
 		time.Sleep(30 * time.Second)
 	}
-	os.Exit(0)
 }
