@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,10 +45,8 @@ type StsOperatorConfigReconciler struct {
 	Log    logr.Logger
 }
 
-var (
-	defaultName      = "stsOperatorConfig"
-	defaultNamespace = "sts-silicom"
-)
+const defaultName = "sts-operator-config"
+const defaultNamespace = "sts-silicom"
 
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/status,verbs=get;update;patch
@@ -70,25 +67,10 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	// Fetch the StsOperatorConfig instance
 	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
-	err := r.Get(ctx, types.NamespacedName{
+	err := r.Get(context.TODO(), types.NamespacedName{
 		Name: defaultName, Namespace: defaultNamespace}, defaultCfg)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			defaultCfg.SetNamespace(defaultNamespace)
-			defaultCfg.SetName(defaultName)
-			defaultCfg = &stsv1alpha1.StsOperatorConfig{}
-
-			if err = r.Create(ctx, defaultCfg); err != nil {
-				reqLogger.Error(err, "failed to create default sts config",
-					"Namespace", defaultNamespace, "Name", defaultName)
-				return ctrl.Result{}, err
-			}
-			// Return and don't requeue
-			return ctrl.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Failed to get Deafult Operator CR")
 		return ctrl.Result{}, err
 	}
 

@@ -32,7 +32,7 @@ sources:
           subsystem_device: ["02d8"]
           subsystem_device: ["02d0"]
           subsystem_device: ["02de"]
-  - name: "intel.e810-c.devices"
+  - name: "intel.e810_c.devices"
     matchOn:
       - pciId :
           vendor: ["8086"]

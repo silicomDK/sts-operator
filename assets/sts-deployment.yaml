@@ -2,16 +2,16 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{.Name}}
-  namespace: {{.Spec.Namespace}}
+  name: {{.StsConfig.Name}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
 
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{.Name}}
-  namespace: {{.Spec.Namespace}}
+  name: {{.StsConfig.Name}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
 rules:
 - apiGroups:
   - sts.silicom.com
@@ -37,28 +37,28 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{.Name}}
-  namespace: {{.Spec.Namespace}}
+  name: {{.StsConfig.Name}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{.Name}}
+  name: {{.StsConfig.Name}}
 subjects:
 - kind: ServiceAccount
-  name: {{.Name}}
-  namespace: {{.Spec.Namespace}}
+  name: {{.StsConfig.Name}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
 
 ---
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.Name}}-siltsync-conf
-  namespace: {{.Spec.Namespace}}
+  name: {{.StsConfig.Name}}-siltsync-conf
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
 data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
-{{ range $i, $dev := .Spec.Interfaces }}
+{{ range $i, $dev := .StsConfig.Spec.Interfaces }}
     nicStr{{$i}} = {{$dev.EthName}}
     qlEnable{{$i}} = {{$dev.QlEnable}}
     holdOff{{$i}} = {{$dev.HoldOff}}
@@ -66,17 +66,17 @@ data:
     slavePortMask = {{printf "0x%x" .SlavePortMask}}
     masterPortMask = {{printf "0x%x" .MasterPortMask}}
     syncePortMask = {{printf "0x%x" .SyncePortMask}}
-    phyLedsCtl = {{.Spec.PhyLedsCtl}}
+    phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
     IPCServer = 1
-    domainNum = {{.Spec.DomainNumber}}
+    domainNum = {{.StsConfig.Spec.DomainNumber}}
     forwardable = 0
     twoStep = 0
     priority2 = 128
-    srcPPS = {{.Spec.SrcPPS}}
-    src10MHz = {{.Spec.Src10MHz}}
-    synceRecClkPort = {{.Spec.SynceRecClkPort}}
-    syncOption = {{.Spec.SyncOption}}
-    synceCpu = {{.Spec.SynceCpu}}
+    srcPPS = {{.StsConfig.Spec.SrcPPS}}
+    src10MHz = {{.StsConfig.Spec.Src10MHz}}
+    synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
+    syncOption = {{.StsConfig.Spec.SyncOption}}
+    synceCpu = {{.StsConfig.Spec.SynceCpu}}
     swTimestamp = 0
     inbandMode = 1 
     dumpMode = 0
@@ -98,17 +98,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-gpsd
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: gpsd
 spec:
   type: NodePort
   selector:
-    app: {{.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
-      port: {{.GpsSvcPort}}
-      targetPort: {{.GpsSvcPort}}
+      port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+      targetPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
 
 ---
 {{end}}
@@ -117,17 +117,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-tsyncd
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: tsyncd
 spec:
   type: NodePort
   selector:
-    app: {{.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}
   ports:
     - protocol: TCP
-      port: {{.TsyncPort}}
-      targetPort: {{.TsyncPort}}
+      port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
+      targetPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
 
 ---
 
@@ -135,32 +135,32 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: {{.Name}}-{{.NodeName}}
-  name: {{.Name}}-{{.NodeName}}
-  namespace: {{.Spec.Namespace}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}
+  name: {{.StsConfig.Name}}-{{.NodeName}}
+  namespace: {{.StsOperatorConfig.Spec.Namespace}}
   annotations:
-    openshift.io/scc: {{.Spec.Namespace}}
+    openshift.io/scc: {{.StsOperatorConfig.Spec.Namespace}}
 spec:
   selector:
     matchLabels:
-      app: {{.Name}}-{{.NodeName}}
+      app: {{.StsConfig.Name}}-{{.NodeName}}
   template:
     metadata:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
-        app: {{.Name}}-{{.NodeName}}
+        app: {{.StsConfig.Name}}-{{.NodeName}}
     spec:
       shareProcessNamespace: true
       nodeName: {{.NodeName}}
       nodeSelector:
-{{ range $k, $v := .Spec.NodeSelector }}
+{{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
-{{ end }}
-      serviceAccount: {{.Name}}
+{{- end }}
+      serviceAccount: {{.StsConfig.Name}}
       hostNetwork: true
       containers:
-      - image: {{.Spec.ImageRegistry}}/ts2phcs:v1.0.0
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/ts2phcs:{{.StsOperatorConfig.Spec.Versions.Ts2phcs}}
         command: [ "/usr/bin/run-ts2phcs.sh" ]
         name: {{.NodeName}}-ts2phcs
         imagePullPolicy: Always
@@ -180,8 +180,8 @@ spec:
           - name: GPS_SERVER
             value: "0.0.0.0"
           - name: GPS_SVC_PORT
-            value: "{{.GpsSvcPort}}"
-      - image: {{.Spec.ImageRegistry}}/phc2sys:v3.1.1
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/phc2sys:{{.StsOperatorConfig.Spec.Versions.Phc2sys}}
         command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always
@@ -196,7 +196,7 @@ spec:
           - name: GPS_SERVER
             value: "0.0.0.0"
           - name: GPS_SVC_PORT
-            value: "{{.GpsSvcPort}}"
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev
@@ -206,7 +206,7 @@ spec:
           capabilities:
             add:
             - CAP_SYS_TIME
-      - image: {{.Spec.ImageRegistry}}/grpc-tsyncd:{{.Spec.StsVersion}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/grpc-tsyncd:{{.StsOperatorConfig.Spec.Versions.Sts}}
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
         securityContext:
@@ -217,18 +217,18 @@ spec:
             - CAP_SYS_ADMIN
         readinessProbe:
           tcpSocket:
-            port: {{.TsyncPort}}
+            port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           initialDelaySeconds: 15
           periodSeconds: 30
         livenessProbe:
           tcpSocket:
-            port: {{.TsyncPort}}
+            port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           initialDelaySeconds: 60
           periodSeconds: 10
         ports:
-        - containerPort: {{.TsyncPort}}
+        - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           name: {{.ServicePrefix}}-tsyncd
-      - image: {{.Spec.ImageRegistry}}/siltsync:{{.Spec.StsVersion}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/siltsync:{{.StsOperatorConfig.Spec.Versions.Sts}}
         command: [ "/usr/bin/run-tsyncd.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-siltsync
@@ -242,37 +242,37 @@ spec:
           - name: GPS_SERVER
             value: "0.0.0.0"
           - name: GPS_SVC_PORT
-            value: "{{.GpsSvcPort}}"
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         args:
         - --zap-log-level=10
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.Name}}-siltsync-conf
+          - name: {{.StsConfig.Name}}-siltsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
         securityContext:
           privileged: true
 {{- if .EnableGPS }}
-      - image: {{.Spec.ImageRegistry}}/gpsd:v3.23
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/gpsd:{{.StsOperatorConfig.Spec.Versions.Gpsd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
         readinessProbe:
           tcpSocket:
-            port: {{.GpsSvcPort}}
+            port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
           initialDelaySeconds: 15
           periodSeconds: 30
         livenessProbe:
           tcpSocket:
-            port: {{.GpsSvcPort}}
+            port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
           initialDelaySeconds: 60
           periodSeconds: 10
         ports:
-        - containerPort: {{.GpsSvcPort}}
+        - containerPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
           name: {{.ServicePrefix}}-gpsd
         env:
           - name: GPS_SVC_PORT
-            value: "{{.GpsSvcPort}}"
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         volumeMounts:
           - name: devfs
             mountPath: /dev
@@ -286,7 +286,7 @@ spec:
         - name: devfs
           hostPath:
             path: /dev
-        - name: {{.Name}}-siltsync-conf
+        - name: {{.StsConfig.Name}}-siltsync-conf
           configMap:
             defaultMode: 0777
-            name: {{.Name}}-siltsync-conf
+            name: {{.StsConfig.Name}}-siltsync-conf

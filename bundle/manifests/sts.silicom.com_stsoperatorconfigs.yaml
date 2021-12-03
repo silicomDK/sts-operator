@@ -41,7 +41,7 @@ spec:
                 default: 50051
                 type: integer
               iceVersion:
-                default: 1.6.4
+                default: v1.6.7
                 type: string
               imageRegistry:
                 default: quay.io/silicom
@@ -49,9 +49,21 @@ spec:
               namespace:
                 default: sts-silicom
                 type: string
-              stsVersion:
-                default: 2.0.1.0
-                type: string
+              versions:
+                properties:
+                  gpsd:
+                    default: v3.23.1
+                    type: string
+                  phc2sys:
+                    default: v3.1.1
+                    type: string
+                  sts:
+                    default: v2.0.1.0
+                    type: string
+                  ts2phcs:
+                    default: v1.0.0
+                    type: string
+                type: object
             type: object
           status:
             description: StsOperatorConfigStatus defines the observed state of StsOperatorConfig

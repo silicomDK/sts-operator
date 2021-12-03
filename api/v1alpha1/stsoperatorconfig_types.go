@@ -29,10 +29,7 @@ type StsOperatorConfigSpec struct {
 	// +kubebuilder:default:string=quay.io/silicom
 	ImageRegistry string `json:"imageRegistry,omitempty"`
 
-	// +kubebuilder:default:string="2.0.1.0"
-	StsVersion string `json:"stsVersion,omitempty"`
-
-	// +kubebuilder:default:string="1.6.4"
+	// +kubebuilder:default:string="v1.6.7"
 	IceVersion string `json:"iceVersion,omitempty"`
 
 	// +kubebuilder:default:int32=50051
@@ -43,6 +40,23 @@ type StsOperatorConfigSpec struct {
 
 	// +kubebuilder:default:string="sts-silicom"
 	Namespace string `json:"namespace,omitempty"`
+
+	Versions StsVersions `json:"versions,omitempty"`
+}
+
+type StsVersions struct {
+
+	// +kubebuilder:default:string="v2.0.1.0"
+	Sts string `json:"sts,omitempty"`
+
+	// +kubebuilder:default:string="v3.23.1"
+	Gpsd string `json:"gpsd,omitempty"`
+
+	// +kubebuilder:default:string="v1.0.0"
+	Ts2phcs string `json:"ts2phcs,omitempty"`
+
+	// +kubebuilder:default:string="v3.1.1"
+	Phc2sys string `json:"phc2sys,omitempty"`
 }
 
 // StsOperatorConfigStatus defines the observed state of StsOperatorConfig

@@ -48,16 +48,15 @@ type StsConfigReconciler struct {
 }
 
 type StsConfigTemplate struct {
-	*stsv1alpha1.StsConfig
-	NodeName       string
-	EnableGPS      bool
-	ServicePrefix  string
-	SlavePortMask  int
-	MasterPortMask int
-	SyncePortMask  int
-	ProfileId      int
-	GpsSvcPort     int
-	GrpcSvcPort    int
+	StsConfig         *stsv1alpha1.StsConfig
+	StsOperatorConfig *stsv1alpha1.StsOperatorConfig
+	NodeName          string
+	EnableGPS         bool
+	ServicePrefix     string
+	SlavePortMask     int
+	MasterPortMask    int
+	SyncePortMask     int
+	ProfileId         int
 }
 
 func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interfaces []stsv1alpha1.StsInterfaceSpec) {
@@ -172,11 +171,11 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				cfgTemplate.ProfileId = 3
 			}
 
-			cfgTemplate.GpsSvcPort = defaultCfg.Spec.GpsSvcPort
-			cfgTemplate.GrpcSvcPort = defaultCfg.Spec.GrpcSvcPort
-			cfgTemplate.NodeName = node.Name
 			cfgTemplate.StsConfig = &stsConfig
+			cfgTemplate.StsOperatorConfig = defaultCfg
+			cfgTemplate.NodeName = node.Name
 			cfgTemplate.ServicePrefix = node.Name
+
 			r.interfacesToBitmask(cfgTemplate, stsConfig.Spec.Interfaces)
 
 			err = t.Execute(&buff, cfgTemplate)
