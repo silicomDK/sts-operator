@@ -54,16 +54,16 @@ spec:
               versions:
                 properties:
                   gpsd:
-                    default: v3.23.1
+                    default: 3.23.1
                     type: string
                   phc2sys:
-                    default: v3.1.1
+                    default: 3.1.1
                     type: string
                   sts:
-                    default: v2.0.1.0
+                    default: 2.0.1.0
                     type: string
                   ts2phcs:
-                    default: v1.0.0
+                    default: 1.0.0
                     type: string
                 type: object
             type: object

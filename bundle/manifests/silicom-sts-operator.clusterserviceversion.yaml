@@ -156,9 +156,14 @@ metadata:
           "spec": {
             "gpsSvcPort": 2947,
             "grpcSvcPort": 50051,
-            "iceVersion": "1.6.4",
             "imageRegistry": "quay.io/silicom",
-            "stsVersion": "2.0.1.0"
+            "versions": {
+              "gpsd": "3.23.1",
+              "ice": "1.6.4",
+              "phcs2sys": "3.1.1",
+              "sts": "2.0.1.0",
+              "ts2phcs": "1.0.0"
+            }
           }
         }
       ]

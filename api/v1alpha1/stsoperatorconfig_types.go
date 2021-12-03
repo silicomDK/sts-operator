@@ -46,16 +46,16 @@ type StsOperatorConfigSpec struct {
 
 type StsVersions struct {
 
-	// +kubebuilder:default:string="v2.0.1.0"
+	// +kubebuilder:default:string="2.0.1.0"
 	Sts string `json:"sts,omitempty"`
 
-	// +kubebuilder:default:string="v3.23.1"
+	// +kubebuilder:default:string="3.23.1"
 	Gpsd string `json:"gpsd,omitempty"`
 
-	// +kubebuilder:default:string="v1.0.0"
+	// +kubebuilder:default:string="1.0.0"
 	Ts2phcs string `json:"ts2phcs,omitempty"`
 
-	// +kubebuilder:default:string="v3.1.1"
+	// +kubebuilder:default:string="3.1.1"
 	Phc2sys string `json:"phc2sys,omitempty"`
 }
 

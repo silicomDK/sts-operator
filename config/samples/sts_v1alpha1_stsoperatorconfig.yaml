@@ -5,7 +5,11 @@ metadata:
   namespace: sts-silicom
 spec:
   imageRegistry: quay.io/silicom
-  stsVersion: 2.0.1.0
-  iceVersion: 1.6.4
+  versions:
+    sts: 2.0.1.0
+    ice: 1.6.4
+    ts2phcs: 1.0.0
+    phcs2sys: 3.1.1
+    gpsd: 3.23.1
   grpcSvcPort: 50051
   gpsSvcPort: 2947

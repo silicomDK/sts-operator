@@ -160,7 +160,7 @@ spec:
       serviceAccount: {{.StsConfig.Name}}
       hostNetwork: true
       containers:
-      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/ts2phcs:{{.StsOperatorConfig.Spec.Versions.Ts2phcs}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/ts2phcs:v{{.StsOperatorConfig.Spec.Versions.Ts2phcs}}
         command: [ "/usr/bin/run-ts2phcs.sh" ]
         name: {{.NodeName}}-ts2phcs
         imagePullPolicy: Always
@@ -181,7 +181,7 @@ spec:
             value: "0.0.0.0"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
-      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/phc2sys:{{.StsOperatorConfig.Spec.Versions.Phc2sys}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/phc2sys:v{{.StsOperatorConfig.Spec.Versions.Phc2sys}}
         command: [ "/usr/bin/run-phc2sys.sh" ]
         name: {{.NodeName}}-phc2sys
         imagePullPolicy: Always
@@ -206,7 +206,7 @@ spec:
           capabilities:
             add:
             - CAP_SYS_TIME
-      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/grpc-tsyncd:{{.StsOperatorConfig.Spec.Versions.Sts}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/grpc-tsyncd:v{{.StsOperatorConfig.Spec.Versions.Sts}}
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
         securityContext:
@@ -228,7 +228,7 @@ spec:
         ports:
         - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           name: {{.ServicePrefix}}-tsyncd
-      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/siltsync:{{.StsOperatorConfig.Spec.Versions.Sts}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/siltsync:v{{.StsOperatorConfig.Spec.Versions.Sts}}
         command: [ "/usr/bin/run-tsyncd.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-siltsync
@@ -254,7 +254,7 @@ spec:
         securityContext:
           privileged: true
 {{- if .EnableGPS }}
-      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/gpsd:{{.StsOperatorConfig.Spec.Versions.Gpsd}}
+      - image: {{.StsOperatorConfig.Spec.ImageRegistry}}/gpsd:v{{.StsOperatorConfig.Spec.Versions.Gpsd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
         readinessProbe:
