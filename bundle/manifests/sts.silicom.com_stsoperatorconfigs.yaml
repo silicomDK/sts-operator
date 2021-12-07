@@ -54,8 +54,8 @@ spec:
                   stsPlugin:
                     default: quay.io/silicom/sts-plugin:2.0.1.0
                     type: string
-                  ts2phcs:
-                    default: quay.io/silicom/ts2phcs:1.0.0
+                  tsyncExtts:
+                    default: quay.io/silicom/tsync_extts:1.0.0
                     type: string
                   tsyncd:
                     default: quay.io/silicom/tsyncd:2.0.1.0

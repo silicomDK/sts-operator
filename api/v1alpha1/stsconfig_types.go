@@ -33,41 +33,49 @@ type StsConfigSpec struct {
 	Mode string `json:"mode,omitempty"`
 
 	// +kubebuilder:default:="sts-silicom"
+	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
 	// +kubebuilder:default:=24
 	// +kubebuilder:validation:Minimum=24
 	// +kubebuilder:validation:Maximum=48
+	// +kubebuilder:validation:Optional
 	DomainNumber int `json:"domainNumber,omitempty"`
 
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
+	// +kubebuilder:validation:Optional
 	SrcPPS int `json:"srcPPS,omitempty"`
 
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
+	// +kubebuilder:validation:Optional
 	Src10MHz int `json:"src10MHz,omitempty"`
 
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=7
+	// +kubebuilder:validation:Optional
 	SynceRecClkPort int `json:"synceRecClkPort,omitempty"`
 
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
 	PhyLedsCtl int `json:"phyLedsCtl,omitempty"`
 
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:Optional
 	SyncOption int `json:"synceOption,omitempty"`
 
 	// +kubebuilder:default:=10
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=40
+	// +kubebuilder:validation:Optional
 	SynceCpu int `json:"synceCpu,omitempty"`
 }
 
@@ -78,20 +86,24 @@ type StsInterfaceSpec struct {
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
 	SyncE int `json:"synce,omitempty"`
 
 	// +kubebuilder:default:=500
 	// +kubebuilder:validation:Minimum=300
 	// +kubebuilder:validation:Maximum=1800
+	// +kubebuilder:validation:Optional
 	HoldOff int `json:"holdoff,omitempty"`
 
 	// +kubebuilder:validation:Enum=Master;Slave
 	// +kubebuilder:default:=Master
+	// +kubebuilder:validation:Optional
 	Mode string `json:"mode,omitempty"`
 
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
 	QlEnable int `json:"qlEnable,omitempty"`
 }
 

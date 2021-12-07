@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	helmerv1beta1 "github.com/openshift-psap/special-resource-operator/pkg/helmer/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +39,14 @@ type StsOperatorConfigSpec struct {
 	Images StsImages `json:"images,omitempty"`
 }
 
+type SroCfg struct {
+	Build bool `json:"build,omitempty"`
+
+	Chart helmerv1beta1.HelmChart `json:"chart,omitempty"`
+
+	Namespace string `json:"namespace,omitempty"`
+}
+
 type StsImages struct {
 
 	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.0.1.0"
@@ -52,8 +61,8 @@ type StsImages struct {
 	// +kubebuilder:default:string="quay.io/silicom/gpsd:3.23.1"
 	Gpsd string `json:"gpsd,omitempty"`
 
-	// +kubebuilder:default:string="quay.io/silicom/ts2phcs:1.0.0"
-	Ts2phcs string `json:"ts2phcs,omitempty"`
+	// +kubebuilder:default:string="quay.io/silicom/tsync_extts:1.0.0"
+	TsyncExtts string `json:"tsyncExtts,omitempty"`
 
 	// +kubebuilder:default:string="quay.io/silicom/phc2sys:3.1.1"
 	Phc2sys string `json:"phc2sys,omitempty"`
