@@ -4,23 +4,26 @@
 # Silicom STS Operator
 ![alt text](spec/sts-operator.png "STS Overview")
 
+# Silicom STS Plugin daemonsets
+![alt text](spec/sts-node.png "STS Plugin Daemonsets")
+
 # Silicom STS Operator deployments
 ![alt text](spec/sts-deployments.png "STS Deployments")
 
 ## Table of Contents
 - [STS Operator](#sts-operator)
-- [STS Discovery](#sts-discovery)
+- [STS Plugin](#sts-plugin)
 - [StsConfig](#stsconfig)
 - [Quick Start](#quick-start)
 
 ## STS Operator
 Sts Operator, runs in `sts-silicom` namespace, manages cluster wide STS configurations. It offers `StsConfig` and `StsOperatorConfig` CRDs and creates `tsyncd` to apply node specific STS config.
 
-## STS Discovery daemonset
-Once NFD operator has labelled the nodes, this daemonset queries the network interfaces and STS specific information and accordingly labels the nodes. (feature.node.kubernetes.io/custom-silicom.sts.devices: "true")
+## STS Plugin daemonset (feature.node.kubernetes.io/custom-silicom.sts.devices: "true")
+Once NFD operator has labelled the nodes, this daemonset queries the network interfaces and STS specific information and accordingly labels the nodes.
 
-## STS daemonset
-This consists of the following daemons on labelled nodes, all of these running in the same pod. Nodes labelled with the sts.silicom.com/config: "gm-1"
+## STS daemonset (sts.silicom.com/config: "gm-1")
+This consists of the following daemons on labelled nodes, all of these running in the same pod. Nodes labelled with the
 * tsyncd
 * GPSd (if in T-GM.8275.1 mode)
 * ts2phcs
@@ -36,16 +39,19 @@ metadata:
   name: stsoperatorconfig
   namespace: sts-silicom
 spec:
-  imageRegistry: quay.io/silicom
-  stsVersion: 2.0.1.0
-  iceVersion: 1.6.4
+  images:
+    tsyncd: quay.io/silicom/tsyncd:2.0.1.0
+    ts2Phcs: quay.io/silicom/ts2phcs:1.0.0
+    phcs2Sys: quay.io/silicom/phcs2sys:3.1.1
+    grpcTsyncd: quay.io/silicom/grpc-tsyncd:2.0.1.0
+    gpsd: quay.io/silicom/gpsd:3.23.1
   grpcSvcPort: 50051
   gpsSvcPort: 2947
 
 ```
 
 ## StsConfig
-Example (Grand Master mode)
+Example  (Grand Master mode)
 ```yaml
 apiVersion: sts.silicom.com/v1alpha1
 kind: StsConfig
@@ -53,20 +59,77 @@ metadata:
   name: gm-1
   namespace: sts-silicom
 spec:
-  name: gm-1
+  namespace: sts-silicom
   nodeSelector:
     sts.silicom.com/config: "gm-1"
   mode: T-GM.8275.1
-  namespace: sts-silicom
   interfaces:
     - ethName: enp2s0f0
-      synce: true
-      holdoff: 500
-      mode: Slave
-    - ethName: enp2s0f1
-      synce: true
+      synce: 1
       holdoff: 500
       mode: Master
+      ethPort: 0
+    - ethName: enp2s0f1
+      synce: 1
+      holdoff: 500
+      mode: Master
+      ethPort: 1
+```
+
+## StsNode
+Example
+```yaml
+apiVersion: sts.silicom.com/v1alpha1
+kind: StsNode
+metadata:
+  name: worker2
+  namespace: sts-silicom
+spec: {}
+status:
+  ethInterfaces:
+  - ethName: enp2s0f0
+    ethPort: 0
+    pciAddr: "02:00.0"
+    status: down
+  - ethName: enp2s0f1
+    ethPort: 1
+    pciAddr: "02:00.1"
+    status: down
+  - ethName: enp2s0f2
+    ethPort: 2
+    pciAddr: "02:00.2"
+    status: down
+  - ethName: enp2s0f3
+    ethPort: 3
+    pciAddr: "02:00.3"
+    status: down
+  - ethName: enp2s0f4
+    ethPort: 4
+    pciAddr: "02:00.4"
+    status: down
+  - ethName: enp2s0f5
+    ethPort: 5
+    pciAddr: "02:00.5"
+    status: down
+  - ethName: enp2s0f6
+    ethPort: 6
+    pciAddr: "02:00.6"
+    status: down
+  - ethName: enp2s0f7
+    ethPort: 7
+    pciAddr: "02:00.7"
+    status: down
+  gpsStatus:
+    active: 0
+    device: ""
+    lat: ""
+    lon: ""
+    mode: 0
+    time: "2021-12-07T08:56:41.781Z"
+  tsyncStatus:
+    mode: PTP Master Mode
+    status: Normal Status
+    time: Tue, 07 Dec 2021 08:56:41 UTC
 
 ```
 
