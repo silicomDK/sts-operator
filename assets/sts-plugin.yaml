@@ -23,6 +23,8 @@ rules:
   - get
   - list
   - update
+  - create
+  - delete
 - apiGroups:
   - security.openshift.io
   resources:
@@ -104,7 +106,7 @@ spec:
       serviceAccount: sts-plugin
       hostNetwork: true
       containers:
-      - image: {{.Spec.ImageRegistry}}/sts-plugin:{{.Spec.Versions.Sts}}
+      - image: {{.Spec.Images.StsPlugin}}
         imagePullPolicy: Always
         name: sts-plugin-ctr
         securityContext:

@@ -208,9 +208,11 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 
 func main() {
 	stsNode := &stsv1alpha1.StsNode{}
-
 	nodeName := os.Getenv("NODE_NAME")
 	namespace := os.Getenv("NAMESPACE")
+
+	stsNode.Name = nodeName
+	stsNode.Namespace = namespace
 
 	grpcSvcPort, _ := strconv.Atoi(os.Getenv("GRPC_SVC_PORT"))
 	grpcSvcStr := fmt.Sprintf("%s:%d", nodeName, grpcSvcPort)
@@ -228,17 +230,14 @@ func main() {
 		panic(err.Error())
 	}
 
-	for {
-		err = k8sClient.Get(context.Background(),
-			client.ObjectKey{
-				Namespace: namespace,
-				Name:      nodeName,
-			}, stsNode)
-		if err != nil {
-			fmt.Println("Can't get stsnode yet, waiting... 5 seconds\n")
-			time.Sleep(5 * time.Second)
-		} else {
-			break
+	err = k8sClient.Get(context.Background(),
+		client.ObjectKey{
+			Namespace: namespace,
+			Name:      nodeName,
+		}, stsNode)
+	if err != nil {
+		if err = k8sClient.Create(context.TODO(), stsNode); err != nil {
+			panic(err.Error())
 		}
 	}
 

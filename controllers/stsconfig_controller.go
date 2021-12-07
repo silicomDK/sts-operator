@@ -224,16 +224,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					}
 				}
 			}
-
-			stsNode := &stsv1alpha1.StsNode{}
-			stsNode.Namespace = defaultCfg.Spec.Namespace
-			stsNode.Name = node.Name
-			if err := r.Get(ctx, req.NamespacedName, stsNode); err != nil {
-				if err = r.Create(ctx, stsNode); err != nil {
-					reqLogger.Error(err, "failed to create sts node")
-					return ctrl.Result{}, err
-				}
-			}
 		}
 	}
 

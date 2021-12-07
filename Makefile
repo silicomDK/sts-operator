@@ -34,10 +34,10 @@ IMAGE_TAG_BASE ?= quay.io/silicom/sts-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(IMAGE_TAG_BASE):v$(IMG_VERSION)
+IMG ?= $(IMAGE_TAG_BASE):$(IMG_VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -204,10 +204,10 @@ catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 plugin:
-	docker build . -t quay.io/silicom/sts-plugin:v$(IMG_VERSION) -f Dockerfile.plugin
+	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) -f Dockerfile.plugin
 
 plugin-push:
-	docker push quay.io/silicom/sts-plugin:v$(IMG_VERSION)
+	docker push quay.io/silicom/sts-plugin:$(IMG_VERSION)
 
 s2i: ice.tgz
 	curl -sL https://github.com/openshift/source-to-image/releases/download/v1.3.1/source-to-image-v1.3.1-a5a77147-linux-amd64.tar.gz -o s2i.tar.gz
@@ -218,3 +218,5 @@ ice.tgz:
 	- mkdir src
 	curl -sL "https://sourceforge.net/projects/e1000/files/ice%20stable/1.6.4/ice-1.6.4.tar.gz/download" -o ice.tgz
 	tar xvf ice.tgz -C src
+
+bundle-all: generate manifests bundle bundle-build

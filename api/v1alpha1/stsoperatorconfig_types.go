@@ -26,12 +26,6 @@ import (
 // StsOperatorConfigSpec defines the desired state of StsOperatorConfig
 type StsOperatorConfigSpec struct {
 
-	// +kubebuilder:default:string=quay.io/silicom
-	ImageRegistry string `json:"imageRegistry,omitempty"`
-
-	// +kubebuilder:default:string="v1.6.7"
-	IceVersion string `json:"iceVersion,omitempty"`
-
 	// +kubebuilder:default:int32=50051
 	GrpcSvcPort int `json:"grpcSvcPort,omitempty"`
 
@@ -41,21 +35,27 @@ type StsOperatorConfigSpec struct {
 	// +kubebuilder:default:string="sts-silicom"
 	Namespace string `json:"namespace,omitempty"`
 
-	Versions StsVersions `json:"versions,omitempty"`
+	Images StsImages `json:"images,omitempty"`
 }
 
-type StsVersions struct {
+type StsImages struct {
 
-	// +kubebuilder:default:string="2.0.1.0"
-	Sts string `json:"sts,omitempty"`
+	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.0.1.0"
+	Tsyncd string `json:"tsyncd,omitempty"`
 
-	// +kubebuilder:default:string="3.23.1"
+	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.0.1.0"
+	GrpcTsyncd string `json:"grpcTsyncd,omitempty"`
+
+	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:2.0.1.0"
+	StsPlugin string `json:"stsPlugin,omitempty"`
+
+	// +kubebuilder:default:string="quay.io/silicom/gpsd:3.23.1"
 	Gpsd string `json:"gpsd,omitempty"`
 
-	// +kubebuilder:default:string="1.0.0"
+	// +kubebuilder:default:string="quay.io/silicom/ts2phcs:1.0.0"
 	Ts2phcs string `json:"ts2phcs,omitempty"`
 
-	// +kubebuilder:default:string="3.1.1"
+	// +kubebuilder:default:string="quay.io/silicom/phc2sys:3.1.1"
 	Phc2sys string `json:"phc2sys,omitempty"`
 }
 
