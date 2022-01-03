@@ -28,22 +28,38 @@ import (
 type StsOperatorConfigSpec struct {
 
 	// +kubebuilder:default:int32=50051
+	// +kubebuilder:validation:Optional
 	GrpcSvcPort int `json:"grpcSvcPort,omitempty"`
 
 	// +kubebuilder:default:int32=2947
+	// +kubebuilder:validation:Optional
 	GpsSvcPort int `json:"gpsSvcPort,omitempty"`
 
 	// +kubebuilder:default:string="sts-silicom"
+	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	Images StsImages `json:"images,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Sro SroCfg `json:"sro,omitempty"`
 }
 
 type SroCfg struct {
+	// +kubebuilder:default:bool=true
+	// +kubebuilder:validation:Optional
 	Build bool `json:"build,omitempty"`
 
+	// +kubebuilder:default:string="1.6.7"
+	// +kubebuilder:validation:Optional
+	IceVersion string `json:"iceVersion,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	Chart helmerv1beta1.HelmChart `json:"chart,omitempty"`
 
+	// +kubebuilder:default:string="sts-silicom"
+	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 }
 

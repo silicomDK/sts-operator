@@ -64,6 +64,56 @@ spec:
               namespace:
                 default: sts-silicom
                 type: string
+              sro:
+                properties:
+                  build:
+                    default: true
+                    type: boolean
+                  chart:
+                    properties:
+                      name:
+                        type: string
+                      repository:
+                        properties:
+                          caFile:
+                            type: string
+                          certFile:
+                            type: string
+                          insecure_skip_tls_verify:
+                            default: false
+                            type: boolean
+                          keyFile:
+                            type: string
+                          name:
+                            type: string
+                          password:
+                            type: string
+                          url:
+                            type: string
+                          username:
+                            type: string
+                        required:
+                        - name
+                        - url
+                        type: object
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      version:
+                        type: string
+                    required:
+                    - name
+                    - repository
+                    - version
+                    type: object
+                  iceVersion:
+                    default: 1.6.7
+                    type: boolean
+                  namespace:
+                    default: sts-silicom
+                    type: string
+                type: object
             type: object
           status:
             description: StsOperatorConfigStatus defines the observed state of StsOperatorConfig

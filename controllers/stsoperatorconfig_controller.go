@@ -118,7 +118,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: "sro",
+			Namespace: defaultCfg.Spec.Sro.Namespace,
 			Labels: map[string]string{
 				"app": "ice-driver-src",
 			},
@@ -159,7 +159,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: "sro",
+			Namespace: defaultCfg.Spec.Sro.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -216,7 +216,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
-			Namespace:    "sro",
+			Namespace:    defaultCfg.Spec.Sro.Namespace,
 			NodeSelector: map[string]string{"feature.node.kubernetes.io/custom-intel.e810_c.devices": "true"},
 			Chart: helmerv1beta1.HelmChart{
 				Version: "0.0.1",
@@ -234,12 +234,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 					"buildArgs": []map[string]interface{}{
 						{
 							"name":  "ICE_VERSION",
-							"value": "1.6.7",
+							"value": defaultCfg.Spec.Sro.IceVersion,
 						},
 					},
 					"runArgs": map[string]interface{}{
 						"platform": "openshift-container-platform",
-						"buildIce": "true",
+						"buildIce": defaultCfg.Spec.Sro.Build,
 					},
 				},
 			},
