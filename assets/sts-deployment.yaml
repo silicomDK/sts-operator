@@ -160,9 +160,9 @@ spec:
       serviceAccount: {{.StsConfig.Name}}
       hostNetwork: true
       containers:
-      - image: {{.StsOperatorConfig.Spec.Images.Ts2phcs}}
-        command: [ "/usr/bin/run-ts2phcs.sh" ]
-        name: {{.NodeName}}-ts2phcs
+      - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}
+        command: [ "/usr/bin/run-tsync_extts.sh" ]
+        name: {{.NodeName}}-tsyncextts
         imagePullPolicy: Always
         network_mode: host
         securityContext:

@@ -25,15 +25,21 @@ import (
 	"regexp"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/go-logr/logr"
+	srov1beta1 "github.com/openshift-psap/special-resource-operator/api/v1beta1"
+	helmerv1beta1 "github.com/openshift-psap/special-resource-operator/pkg/helmer/api/v1beta1"
 	nfdv1 "github.com/openshift/cluster-nfd-operator/api/v1"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
 )
@@ -43,6 +49,11 @@ type StsOperatorConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
+}
+
+type Args struct {
+	name  string
+	value string
 }
 
 const defaultName = "sts-operator-config"
@@ -74,6 +85,12 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
+	err = r.DeploySro(defaultCfg)
+	if err != nil {
+		reqLogger.Error(err, "Failed to deploy SRO requirements")
+		return ctrl.Result{}, err
+	}
+
 	err = r.DeployNfd(defaultCfg)
 	if err != nil {
 		reqLogger.Error(err, "Failed to create NFD CR")
@@ -94,6 +111,158 @@ func (r *StsOperatorConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&stsv1alpha1.StsOperatorConfig{}).
 		Complete(r)
+}
+
+func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
+
+	svc := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ice-driver-src",
+			Namespace: defaultCfg.Spec.Sro.Namespace,
+			Labels: map[string]string{
+				"app": "ice-driver-src",
+			},
+			Annotations: map[string]string{
+				"openshift.io/scc": "sts-silicom",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Type:     "NodePort",
+			Selector: map[string]string{"app": "ice-driver-src"},
+			Ports: []v1.ServicePort{
+				{
+					Name:       "ice-driver-src",
+					Port:       3000,
+					TargetPort: intstr.FromInt(3000),
+					Protocol:   "TCP",
+				},
+			},
+		},
+	}
+
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: svc.Namespace,
+		Name:      svc.Name,
+	}, svc); err != nil {
+
+		err = r.Create(context.TODO(), svc)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		r.Update(context.TODO(), svc)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ice-driver-src",
+			Namespace: defaultCfg.Spec.Sro.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "ice-driver-src",
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "ice-driver-src",
+					},
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Name:            "ice-driver-src",
+							Image:           "quay.io/silicom/ice-driver-src:1.6.7",
+							ImagePullPolicy: "Always",
+							Ports: []v1.ContainerPort{
+								{
+									Name:          "http",
+									Protocol:      v1.ProtocolTCP,
+									ContainerPort: 3000,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: deployment.Namespace,
+		Name:      deployment.Name,
+	}, deployment); err != nil {
+
+		err = r.Create(context.TODO(), deployment)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		r.Update(context.TODO(), deployment)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	sr := &srov1beta1.SpecialResource{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ice-special-resource",
+			Namespace: "sro",
+		},
+		Spec: srov1beta1.SpecialResourceSpec{
+			Debug:        false,
+			Namespace:    defaultCfg.Spec.Sro.Namespace,
+			NodeSelector: map[string]string{"feature.node.kubernetes.io/custom-intel.e810_c.devices": "true"},
+			Chart: helmerv1beta1.HelmChart{
+				Version: "0.0.1",
+				Name:    "ice-special-resource",
+				Repository: helmerv1beta1.HelmRepo{
+					Name: "ice-special-resource",
+					URL:  "http://ice-driver-src:3000/",
+				},
+			},
+			Set: unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind":           "Values",
+					"apiVersion":     "sro.openshift.io/v1beta1",
+					"driverRegistry": fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s", "sro"),
+					"buildArgs": []map[string]interface{}{
+						{
+							"name":  "ICE_VERSION",
+							"value": defaultCfg.Spec.Sro.IceVersion,
+						},
+					},
+					"runArgs": map[string]interface{}{
+						"platform": "openshift-container-platform",
+						"buildIce": defaultCfg.Spec.Sro.Build,
+					},
+				},
+			},
+		},
+	}
+
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: sr.Namespace,
+		Name:      sr.Name,
+	}, sr); err != nil {
+
+		err = r.Create(context.TODO(), sr)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		r.Update(context.TODO(), sr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return nil
 }
 
 func (r *StsOperatorConfigReconciler) DeployNfd(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
