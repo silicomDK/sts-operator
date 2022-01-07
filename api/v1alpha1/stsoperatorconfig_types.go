@@ -61,6 +61,18 @@ type SroCfg struct {
 	// +kubebuilder:default:string="sts-silicom"
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
+
+	// +kubebuilder:default:string="quay.io/silicom/ice-driver-src:1.6.7"
+	// +kubebuilder:validation:Optional
+	SrcImage string `json:"srcImage,omitempty"`
+
+	// +kubebuilder:default:int32=3000
+	// +kubebuilder:validation:Optional
+	SrcSvcPort int `json:"srcSvcPort,omitempty"`
+
+	// +kubebuilder:default:string="image-registry.openshift-image-registry.svc:5000"
+	// +kubebuilder:validation:Optional
+	DriverRegistry string `json:"driverRegistry,omitempty"`
 }
 
 type StsImages struct {
