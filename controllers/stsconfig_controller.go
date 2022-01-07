@@ -119,11 +119,11 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Fetch the PtpOperatorConfig instance
 	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
-	err = r.Get(ctx, types.NamespacedName{Name: defaultName, Namespace: defaultNamespace}, defaultCfg)
+	err = r.Get(ctx, types.NamespacedName{Name: operatorName, Namespace: operatorNamespace}, defaultCfg)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Error(err, "Failed to get default sts config",
-				"Namespace", defaultNamespace, "Name", defaultName)
+			reqLogger.Error(err, "Failed to get sts config",
+				"Namespace", operatorNamespace, "Name", operatorName)
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, err

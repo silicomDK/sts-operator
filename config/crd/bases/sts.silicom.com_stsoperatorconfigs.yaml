@@ -116,7 +116,7 @@ spec:
                     default: 1.6.7
                     type: string
                   namespace:
-                    default: sts-silicom
+                    default: sro
                     type: string
                   srcImage:
                     default: quay.io/silicom/ice-driver-src:1.6.7

@@ -51,8 +51,8 @@ type StsOperatorConfigReconciler struct {
 	Log    logr.Logger
 }
 
-const defaultName = "sts-operator-config"
-const defaultNamespace = "sts-silicom"
+const operatorName = "sts-operator-config"
+const operatorNamespace = "sts-silicom"
 
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/status,verbs=get;update;patch
@@ -72,27 +72,27 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	reqLogger.Info("Reconciling StsOperatorConfig")
 
 	// Fetch the StsOperatorConfig instance
-	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
+	operatorCfg := &stsv1alpha1.StsOperatorConfig{}
 	err := r.Get(context.TODO(), types.NamespacedName{
-		Name: defaultName, Namespace: defaultNamespace}, defaultCfg)
+		Name: operatorName, Namespace: operatorNamespace}, operatorCfg)
 	if err != nil {
 		reqLogger.Error(err, "Failed to get Deafult Operator CR")
 		return ctrl.Result{}, err
 	}
 
-	err = r.DeploySro(defaultCfg)
-	if err != nil {
-		reqLogger.Error(err, "Failed to deploy SRO requirements")
-		return ctrl.Result{}, err
-	}
-
-	err = r.DeployNfd(defaultCfg)
+	err = r.DeployNfd(operatorCfg)
 	if err != nil {
 		reqLogger.Error(err, "Failed to create NFD CR")
 		return ctrl.Result{}, err
 	}
 
-	err = r.DeployPlugin(defaultCfg)
+	err = r.DeploySro(operatorCfg)
+	if err != nil {
+		reqLogger.Error(err, "Failed to deploy SRO requirements")
+		return ctrl.Result{}, err
+	}
+
+	err = r.DeployPlugin(operatorCfg)
 	if err != nil {
 		reqLogger.Error(err, "Failed to deploy plugin daemons")
 		return ctrl.Result{}, err
@@ -108,16 +108,16 @@ func (r *StsOperatorConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
+func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 
-	if len(defaultCfg.Spec.Sro.Chart.Repository.URL) < 1 {
-		defaultCfg.Spec.Sro.Chart.Repository.URL = "http://ice-driver-src"
+	if len(operatorCfg.Spec.Sro.Chart.Repository.URL) < 1 {
+		operatorCfg.Spec.Sro.Chart.Repository.URL = "http://ice-driver-src"
 	}
 
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: defaultCfg.Spec.Sro.Namespace,
+			Namespace: operatorCfg.Spec.Sro.Namespace,
 			Labels: map[string]string{
 				"app": "ice-driver-src",
 			},
@@ -131,8 +131,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 			Ports: []v1.ServicePort{
 				{
 					Name:       "ice-driver-src",
-					Port:       int32(defaultCfg.Spec.Sro.SrcSvcPort),
-					TargetPort: intstr.FromInt(defaultCfg.Spec.Sro.SrcSvcPort),
+					Port:       int32(operatorCfg.Spec.Sro.SrcSvcPort),
+					TargetPort: intstr.FromInt(operatorCfg.Spec.Sro.SrcSvcPort),
 					Protocol:   "TCP",
 				},
 			},
@@ -158,7 +158,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: defaultCfg.Spec.Sro.Namespace,
+			Namespace: operatorCfg.Spec.Sro.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -176,13 +176,13 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 					Containers: []v1.Container{
 						{
 							Name:            "ice-driver-src",
-							Image:           defaultCfg.Spec.Sro.SrcImage,
+							Image:           operatorCfg.Spec.Sro.SrcImage,
 							ImagePullPolicy: "Always",
 							Ports: []v1.ContainerPort{
 								{
 									Name:          "http",
 									Protocol:      v1.ProtocolTCP,
-									ContainerPort: int32(defaultCfg.Spec.Sro.SrcSvcPort),
+									ContainerPort: int32(operatorCfg.Spec.Sro.SrcSvcPort),
 								},
 							},
 						},
@@ -211,38 +211,38 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	sr := &srov1beta1.SpecialResource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-special-resource",
-			Namespace: defaultCfg.Spec.Sro.Namespace,
+			Namespace: operatorCfg.Spec.Sro.Namespace,
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
-			Namespace:    defaultCfg.Spec.Sro.Namespace,
+			Namespace:    operatorCfg.Spec.Sro.Namespace,
 			NodeSelector: map[string]string{"feature.node.kubernetes.io/custom-intel.e810_c.devices": "true"},
 			Chart: helmerv1beta1.HelmChart{
 				Version: "0.0.1",
 				Name:    "ice-special-resource",
 				Repository: helmerv1beta1.HelmRepo{
 					Name: "ice-special-resource",
-					URL:  fmt.Sprintf("%s:%d", defaultCfg.Spec.Sro.Chart.Repository.URL, defaultCfg.Spec.Sro.SrcSvcPort),
+					URL:  fmt.Sprintf("%s:%d", operatorCfg.Spec.Sro.Chart.Repository.URL, operatorCfg.Spec.Sro.SrcSvcPort),
 				},
 			},
 			Set: unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"kind":           "Values",
 					"apiVersion":     "sro.openshift.io/v1beta1",
-					"driverRegistry": fmt.Sprintf("%s/%s", defaultCfg.Spec.Sro.DriverRegistry, defaultCfg.Spec.Sro.Namespace),
+					"driverRegistry": fmt.Sprintf("%s/%s", operatorCfg.Spec.Sro.DriverRegistry, operatorCfg.Spec.Sro.Namespace),
 					"buildArgs": []map[string]interface{}{
 						{
 							"name":  "ICE_VERSION",
-							"value": defaultCfg.Spec.Sro.IceVersion,
+							"value": operatorCfg.Spec.Sro.IceVersion,
 						},
 						{
 							"name":  "ICE_SRC",
-							"value": defaultCfg.Spec.Sro.SrcImage,
+							"value": operatorCfg.Spec.Sro.SrcImage,
 						},
 					},
 					"runArgs": map[string]interface{}{
 						"platform": "openshift-container-platform",
-						"buildIce": defaultCfg.Spec.Sro.Build,
+						"buildIce": operatorCfg.Spec.Sro.Build,
 					},
 				},
 			},
@@ -268,12 +268,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	return nil
 }
 
-func (r *StsOperatorConfigReconciler) DeployNfd(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
+func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 
 	nfdOperand := &nfdv1.NodeFeatureDiscovery{}
 	nfdOperand.Name = "nfd-sts-silicom"
-	nfdOperand.Namespace = defaultCfg.Spec.Namespace
-	nfdOperand.Spec.Operand.Namespace = defaultCfg.Spec.Namespace
+	nfdOperand.Namespace = operatorCfg.Spec.Namespace
+	nfdOperand.Spec.Operand.Namespace = operatorCfg.Spec.Namespace
 
 	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
 	if err != nil {
@@ -304,7 +304,7 @@ func (r *StsOperatorConfigReconciler) DeployNfd(defaultCfg *stsv1alpha1.StsOpera
 	return nil
 }
 
-func (r *StsOperatorConfigReconciler) DeployPlugin(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
+func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 	var buff bytes.Buffer
 	var objects []client.Object
 
@@ -320,7 +320,7 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(defaultCfg *stsv1alpha1.StsOp
 		return err
 	}
 
-	err = t.Execute(&buff, defaultCfg)
+	err = t.Execute(&buff, operatorCfg)
 	if err != nil {
 		fmt.Println("ERROR: Template execute failure")
 		return err

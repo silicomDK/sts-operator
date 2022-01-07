@@ -53,7 +53,7 @@ subjects:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{.StsConfig.Name}}-siltsync-conf
+  name: {{.StsConfig.Name}}-tsync-conf
   namespace: {{.StsOperatorConfig.Spec.Namespace}}
 data:
   tsyncd.conf: |
@@ -181,8 +181,6 @@ spec:
           - name: GM_MODE
             value: "-g"
 {{end}}
-          - name: GPS_SERVER
-            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
       - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
@@ -197,8 +195,6 @@ spec:
 {{- else}}
             value: "false"
 {{end}}
-          - name: GPS_SERVER
-            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         volumeMounts:
@@ -235,7 +231,7 @@ spec:
       - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
         command: [ "/usr/bin/run-tsyncd.sh" ]
         imagePullPolicy: Always
-        name: {{.NodeName}}-siltsync
+        name: {{.NodeName}}-tsync
         env:
           - name: WAIT_FOR_GPS
 {{- if .EnableGPS}}
@@ -243,8 +239,6 @@ spec:
 {{- else}}
             value: "false"
 {{- end}}
-          - name: GPS_SERVER
-            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         args:
@@ -252,7 +246,7 @@ spec:
         volumeMounts:
           - name: devfs
             mountPath: /dev
-          - name: {{.StsConfig.Name}}-siltsync-conf
+          - name: {{.StsConfig.Name}}-tsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
         securityContext:
@@ -290,7 +284,7 @@ spec:
         - name: devfs
           hostPath:
             path: /dev
-        - name: {{.StsConfig.Name}}-siltsync-conf
+        - name: {{.StsConfig.Name}}-tsync-conf
           configMap:
             defaultMode: 0777
-            name: {{.StsConfig.Name}}-siltsync-conf
+            name: {{.StsConfig.Name}}-tsync-conf

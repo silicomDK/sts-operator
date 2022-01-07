@@ -58,7 +58,7 @@ type SroCfg struct {
 	// +kubebuilder:validation:Optional
 	Chart helmerv1beta1.HelmChart `json:"chart,omitempty"`
 
-	// +kubebuilder:default:string="sts-silicom"
+	// +kubebuilder:default:string="sro"
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
