@@ -107,12 +107,21 @@ spec:
                     - repository
                     - version
                     type: object
+                  driverRegistry:
+                    default: image-registry.openshift-image-registry.svc:5000
+                    type: string
                   iceVersion:
                     default: 1.6.7
-                    type: boolean
+                    type: string
                   namespace:
                     default: sts-silicom
                     type: string
+                  srcImage:
+                    default: quay.io/silicom/ice-driver-src:1.6.7
+                    type: string
+                  srcSvcPort:
+                    default: 3000
+                    type: integer
                 type: object
             type: object
           status:

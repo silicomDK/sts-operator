@@ -177,8 +177,12 @@ spec:
 {{- else}}
             value: "false"
 {{end}}
+{{- if eq .ProfileId 2}}
+          - name: GM_MODE
+            value: "-g"
+{{end}}
           - name: GPS_SERVER
-            value: "0.0.0.0"
+            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
       - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
@@ -194,7 +198,7 @@ spec:
             value: "false"
 {{end}}
           - name: GPS_SERVER
-            value: "0.0.0.0"
+            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         volumeMounts:
@@ -240,7 +244,7 @@ spec:
             value: "false"
 {{- end}}
           - name: GPS_SERVER
-            value: "0.0.0.0"
+            value: "{{.ServicePrefix}}-gpsd"
           - name: GPS_SVC_PORT
             value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
         args:

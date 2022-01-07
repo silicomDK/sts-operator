@@ -51,11 +51,6 @@ type StsOperatorConfigReconciler struct {
 	Log    logr.Logger
 }
 
-type Args struct {
-	name  string
-	value string
-}
-
 const defaultName = "sts-operator-config"
 const defaultNamespace = "sts-silicom"
 
@@ -115,6 +110,10 @@ func (r *StsOperatorConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOperatorConfig) error {
 
+	if len(defaultCfg.Spec.Sro.Chart.Repository.URL) < 1 {
+		defaultCfg.Spec.Sro.Chart.Repository.URL = "http://ice-driver-src"
+	}
+
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
@@ -132,8 +131,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 			Ports: []v1.ServicePort{
 				{
 					Name:       "ice-driver-src",
-					Port:       3000,
-					TargetPort: intstr.FromInt(3000),
+					Port:       int32(defaultCfg.Spec.Sro.SrcSvcPort),
+					TargetPort: intstr.FromInt(defaultCfg.Spec.Sro.SrcSvcPort),
 					Protocol:   "TCP",
 				},
 			},
@@ -177,13 +176,13 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 					Containers: []v1.Container{
 						{
 							Name:            "ice-driver-src",
-							Image:           "quay.io/silicom/ice-driver-src:1.6.7",
+							Image:           defaultCfg.Spec.Sro.SrcImage,
 							ImagePullPolicy: "Always",
 							Ports: []v1.ContainerPort{
 								{
 									Name:          "http",
 									Protocol:      v1.ProtocolTCP,
-									ContainerPort: 3000,
+									ContainerPort: int32(defaultCfg.Spec.Sro.SrcSvcPort),
 								},
 							},
 						},
@@ -212,7 +211,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 	sr := &srov1beta1.SpecialResource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-special-resource",
-			Namespace: "sro",
+			Namespace: defaultCfg.Spec.Sro.Namespace,
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
@@ -223,18 +222,22 @@ func (r *StsOperatorConfigReconciler) DeploySro(defaultCfg *stsv1alpha1.StsOpera
 				Name:    "ice-special-resource",
 				Repository: helmerv1beta1.HelmRepo{
 					Name: "ice-special-resource",
-					URL:  "http://ice-driver-src:3000/",
+					URL:  fmt.Sprintf("%s:%d", defaultCfg.Spec.Sro.Chart.Repository.URL, defaultCfg.Spec.Sro.SrcSvcPort),
 				},
 			},
 			Set: unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"kind":           "Values",
 					"apiVersion":     "sro.openshift.io/v1beta1",
-					"driverRegistry": fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s", "sro"),
+					"driverRegistry": fmt.Sprintf("%s/%s", defaultCfg.Spec.Sro.DriverRegistry, defaultCfg.Spec.Sro.Namespace),
 					"buildArgs": []map[string]interface{}{
 						{
 							"name":  "ICE_VERSION",
 							"value": defaultCfg.Spec.Sro.IceVersion,
+						},
+						{
+							"name":  "ICE_SRC",
+							"value": defaultCfg.Spec.Sro.SrcImage,
 						},
 					},
 					"runArgs": map[string]interface{}{
