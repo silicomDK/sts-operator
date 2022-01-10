@@ -139,6 +139,19 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
+	// Don't create another service in another namespace without deleting the default
+	if svc.Namespace != operatorNamespace {
+		if err := r.Get(context.TODO(), client.ObjectKey{
+			Namespace: svc.Namespace,
+			Name:      svc.Name,
+		}, svc); err != nil {
+			err = r.Delete(context.TODO(), svc)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: svc.Namespace,
 		Name:      svc.Name,
@@ -190,6 +203,19 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 				},
 			},
 		},
+	}
+
+	// Don't create another service in another namespace without deleting the default
+	if deployment.Namespace != operatorNamespace {
+		if err := r.Get(context.TODO(), client.ObjectKey{
+			Namespace: deployment.Namespace,
+			Name:      deployment.Name,
+		}, deployment); err != nil {
+			err = r.Delete(context.TODO(), deployment)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 
 	if err := r.Get(context.TODO(), client.ObjectKey{

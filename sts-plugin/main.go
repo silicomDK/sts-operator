@@ -19,6 +19,7 @@ import (
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
 	pb "github.com/silicomdk/sts-operator/grpc/tsynctl"
 	grpc "google.golang.org/grpc"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -86,6 +87,13 @@ func query_host(stsNode *stsv1alpha1.StsNode) {
 		id := strings.Split(scanner.Text(), " ")
 		path := fmt.Sprintf("/sys/bus/pci/devices/0000:%s/net/*", id[0])
 		res, _ := filepath.Glob(path)
+
+		if len(res) < 1 {
+			stsNode.Status.DriverAvailable = false
+			break
+		}
+
+		stsNode.Status.DriverAvailable = true
 		iface := string(filepath.Base(res[0]))
 
 		nodeInterface.EthName = iface
@@ -207,6 +215,7 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 }
 
 func main() {
+	var node corev1.Node
 	stsNode := &stsv1alpha1.StsNode{}
 	nodeName := os.Getenv("NODE_NAME")
 	namespace := os.Getenv("NAMESPACE")
@@ -241,8 +250,34 @@ func main() {
 		}
 	}
 
+	err = k8sClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name: os.Getenv("NODE_NAME"),
+		}, &node)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	node.Labels["sts.silicom.com/ice-driver-available"] = "false"
+	err = k8sClient.Update(context.TODO(), &node)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	for {
 		query_host(stsNode)
+
+		if stsNode.Status.DriverAvailable {
+			node.Labels["sts.silicom.com/ice-driver-available"] = "true"
+		} else {
+			node.Labels["sts.silicom.com/ice-driver-available"] = "false"
+		}
+
+		err = k8sClient.Update(context.TODO(), &node)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
 			fmt.Printf("Update failed: %v\n", err)
 		}

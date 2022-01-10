@@ -154,6 +154,7 @@ spec:
       shareProcessNamespace: true
       nodeName: {{.NodeName}}
       nodeSelector:
+        sts.silicom.com/ice-driver-available: "true"
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}

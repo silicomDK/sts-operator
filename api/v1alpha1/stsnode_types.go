@@ -54,9 +54,10 @@ type StsNodeInterfaceStatus struct {
 
 // StsNodeStatus defines the observed state of StsNode
 type StsNodeStatus struct {
-	TsyncStatus   TsyncStatus              `json:"tsyncStatus,omitempty"`
-	GpsStatus     GPSStatus                `json:"gpsStatus,omitempty"`
-	EthInterfaces []StsNodeInterfaceStatus `json:"ethInterfaces,omitempty"`
+	TsyncStatus     TsyncStatus              `json:"tsyncStatus,omitempty"`
+	GpsStatus       GPSStatus                `json:"gpsStatus,omitempty"`
+	EthInterfaces   []StsNodeInterfaceStatus `json:"ethInterfaces,omitempty"`
+	DriverAvailable bool                     `json:"driverAvailable,omitempty"`
 }
 
 //+kubebuilder:object:root=true
