@@ -153,6 +153,7 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
+	echo "  com.redhat.openshift.versions: v4.8" >> bundle/metadata/annotations.yaml
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
