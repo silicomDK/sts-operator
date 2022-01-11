@@ -11,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Tsynctl gRPC protobuf
+// Copyright (c) 2021 Silicom Ltd. All rights reserved.
+//
 
 syntax = "proto3";
 
@@ -23,146 +27,406 @@ package grpc_tsynctl;
 
 // The TsynctlGrpc service definition.
 service TsynctlGrpc {
+	rpc GetInfo (Empty) returns (InfoReply) {}
 	rpc GetMode (Empty) returns (MessageReply) {}
 	rpc GetTime (Empty) returns (TimeReply) {}
-	rpc GetAlarms (Empty) returns (stream AlarmReply) {}
-	rpc GetStat (StatRequest) returns (StatReply) {}
-	rpc ResetStat (ResetStatRequest) returns (ResetStatReply) {}
 	rpc GetStatus (Empty) returns (MessageReply) {}
 	rpc GetClockClass (Empty) returns (MessageReply) {}
-	rpc GetInfo (Empty) returns (InfoReply) {}
+	rpc GetPtpDataset (DatasetRequest) returns (DatasetReply) {}
+	rpc GetStat (StatRequest) returns (StatReply) {}
+	rpc ResetStat (StatRequest) returns (ResetStatReply) {}
+	rpc GetAlarms (Empty) returns (stream AlarmReply) {}
+	rpc ResetAlarms (Empty) returns (ResetAlarmsReply) {}
+	rpc SetParam (SetParamRequest) returns (SetParamReply) {}
 	rpc GetParam (ParamRequest) returns (ParamReply) {}
 	rpc GetParams (Empty) returns (ParamsReply) {}
+	rpc SetGnssParam (SetParamRequest) returns (SetParamReply) {}
+	rpc GetGnssParam (ParamRequest) returns (ParamReply) {}
+	rpc GetGnssParams (Empty) returns (GnssParamsReply) {}
+	rpc GetGnssInfo (Empty) returns (GnssInfoReply) {}
+	rpc GetGnssStatus (Empty) returns (GnssStatusReply) {}
+	rpc GetSat (SatRequest) returns (SatReply) {}
+	rpc RestartIpc (RestartIpcRequest) returns (Empty) {}
 }
 
 // Request Messages
 message Empty {
 }
 
-message StatRequest {
-	int32	port = 1;
-	int32	msg = 2;
+message DatasetRequest {
+	int32		port = 1;
 }
 
-message ResetStatRequest {
-	int32	port = 1;
+message StatRequest {
+	int32		streamPar = 1;
+}
+
+message SetParamRequest {
+	int32		type = 1;
+	int32		val = 2;
 }
 
 message ParamRequest {
-	int32	type = 1;
+	int32		type = 1;
 }
 
+message SatRequest {
+	int32		sat = 1;
+}
+
+message RestartIpcRequest {
+	int32		delay = 1;
+}
+
+
 // Reply Messages
+message InfoReply {
+	int32		status = 1;
+	int32		fwIdByte0 = 2;
+	int32		fwIdByte1 = 3;
+	int32		fwVerByte0 = 4;
+	int32		fwVerByte1 = 5;
+	int32		fwVerByte2 = 6;
+	int32		fwBuildByte0 = 7;
+	int32		fwBuildByte1 = 8;
+	int32		fwBuildByte2 = 9;
+	int32		envVerByte0 = 10;
+	int32		envVerByte1 = 11;
+	int32		logVerByte0 = 12;
+	int32		logVerByte1 = 13;
+	int32		osVerByte0 = 14;
+	int32		osVerByte1 = 15;
+	int32		osVerByte2 = 16;
+	int32		btlVerByte0 = 17;
+	int32		btlVerByte1 = 18;
+	int32		btlVerByte2 = 19;
+	int32		btlVerByte3 = 20;
+	int32		btlType = 21;
+	int32		btlCapByte0 = 22;
+	int32		btlCapByte1 = 23;
+	int32		btlCapByte2 = 24;
+	int32		btlCapByte3 = 25;
+}
+
 message MessageReply {
-	int32	val = 1;
-	string	message = 2;
+	int32		status = 1;
+	int32		val = 2;
+	string		message = 3;
 }
 
 message TimeReply {
-	int64	val = 1;
-	string	message = 2;
+	int32		status = 1;
+	int64		val = 2;
+	string		message = 3;
 }
 
-message AlarmReply {
-	int32	type = 1;
-	int32	val = 2;
-	int32	prev = 3;
+message ClockId {
+	int32		clockId0 = 1;
+	int32		clockId1 = 2;
+	int32		clockId2 = 3;
+	int32		clockId3 = 4;
+	int32		clockId4 = 5;
+	int32		clockId5 = 6;
+	int32		clockId6 = 7;
+	int32		clockId7 = 8;
+}
+
+message DatasetReply {
+	int32		status = 1;
+	ClockId		defaultClockId = 2;
+	int32		defaultClockTwostep = 3;
+	int32		defaultPortsNum = 4;
+	int32		defaultClockClass = 5;
+	int32 		defaultClockAccuracy = 6;
+	int32		defaultClockOffset = 7;
+	int32 		defaultPriority1 = 8;
+	int32		defaultPriority2 = 9;
+	int32		defaultDomain = 10;
+	int32		defaultSlaveOnly = 11;
+	int32		stepsRemoved = 12;
+	int64		offsetSec = 13;
+	int32		offsetNsec = 14;
+	int64		pathDelaySec = 15;
+	int32		pathDelayNsec = 16;
+	int64		peerPathDelayNsec = 17;
+	ClockId		curClockId = 18;
+	int32		portNum = 19;
+	int32		portState = 20;
+	int32 		delayReqInt = 21;
+	int32 		announceInt = 22;
+	int32		announceTimeout = 23;
+	int32 		syncInt = 24;
+	int32		delayMech = 25;
+	int32		pdelayReqInt = 26;
+	int32		version = 27;
+	ClockId		parentClockId = 28;
+	int32		parentPortNum = 29;
+	int32		parentStats = 30;
+	int32		parentClockOffset = 31;
+	int32		parentClockPhaseRate = 32;
+	ClockId		gmClockId = 33;
+	int32		gmClockClass = 34;
+	int32		gmClockAccuracy = 35;
+	int32		gmClockOffset = 36;
+	int32		gmPriority1 = 37;
+	int32		gmPriority2 = 38;
+	int32		globalUtcOffset = 39;
+	int32		globalUtcOffsetValid = 40;
+	int32		globalLeap59 = 41;
+	int32		globalLeap61 = 42;
+	int32		globalTimeTrace = 43;
+	int32		globalFreqTrace = 44;
+	int32		globalPtpScale = 45;
+	int32		globalSyncUncertain = 46;
+	int32		globalTimeSrc = 47;
+	string		portStateStr = 48;
+	string		delayMechanismStr = 49;
+	string		clockAccuracyStr = 50;
+	string		tsyncTimeSourceStr = 51;
+}
+
+message Stat {
+	int32		msgType = 1;
+	string		msgStr = 2;
+	int32		rx = 3;
+	int32		drop = 4;
+	int32		lost = 5;
+	int32		tx = 6;
 }
 
 message StatReply {
-	int32	stream = 1;
-	string	msg = 2;
-	uint32	rx = 3;
-	uint32	drop = 4;
-	uint32	lost = 5;
-	uint32	tx = 6;
+	int32		status = 1;
+	int32		streamPar = 2;
+	Stat		stat0 = 3;
+	Stat		stat1 = 4;
+	Stat		stat2 = 5;
+	Stat		stat3 = 6;
+	Stat		stat4 = 7;
+	Stat		stat5 = 8;
+	Stat		stat6 = 9;
+	Stat		stat7 = 10;
+	Stat		stat8 = 11;
+	Stat		stat9 = 12;
 }
 
 message ResetStatReply {
-	int32	status = 1;
+	int32		status = 1;
 }
 
-message InfoReply {
-	int32	FwIdByte0 = 1;
-	int32	FwIdByte1 = 2;
-	int32	FwVerByte0 = 3;
-	int32	FwVerByte1 = 4;
-	int32	FwVerByte2 = 5;
-	int32	FwBuildByte0 = 6;
-	int32	FwBuildByte1 = 7;
-	int32	FwBuildByte2 = 8;
-	int32	EnvVerByte0 = 9;
-	int32	EnvVerByte1 = 10;
-	int32	LogVerByte0 = 11;
-	int32	LogVerByte1 = 12;
-	int32	OsVerByte0 = 13;
-	int32	OsVerByte1 = 14;
-	int32	OsVerByte2 = 15;
-	int32	BtlVerByte0 = 16;
-	int32	BtlVerByte1 = 17;
-	int32	BtlVerByte2 = 18;
-	int32	BtlVerByte3 = 19;
-	int32	BtlType = 20;
-	int32	BtlCapByte0 = 21;
-	int32	BtlCapByte1 = 22;
-	int32	BtlCapByte2 = 23;
-	int32	BtlCapByte3 = 24;
+message AlarmReply {
+	int32		type = 2;
+	int32		val = 3;
+	int32		prev = 4;
+	bytes		message = 5;
+}
+
+message ResetAlarmsReply {
+	int32		status = 1;
+}
+
+message SetParamReply {
+	int32		status = 1;
+	int32		delay = 2;
+}
+
+message Param {
+	int32		type = 1;
+	int32		val = 2;
+	int32		flags = 3;
+	string		message = 4;
 }
 
 message ParamReply {
-	int32	type = 1;
-	int32	val = 2;
+	int32		status = 1;
+	Param		param = 2;
 }
 
 message ParamsReply {
-	int32	profile = 1;
-	int32	domain = 2;
-	int32	forward = 3;
-	int32	twoStep = 4;
-	int32	priority2 = 5;
-	int32	ppsOut = 6;
-	int32	mhz10Out = 7;
-	int32	syncePort = 8;
-	int32	syncOpt = 9;
-	int32	ql1 = 10;
-	int32	ql2 = 11;
-	int32	ql3 = 12;
-	int32	ql4 = 13;
-	int32	ql5 = 14;
-	int32	ql6 = 15;
-	int32	ql7 = 16;
-	int32	ql8 = 17;
-	int32	ql9 = 18;
-	int32	ql10 = 19;
-	int32	ql11 = 20;
-	int32	ql12 = 21;
-	int32	holdoff1 = 22;
-	int32	holdoff2 = 23;
-	int32	holdoff3 = 24;
-	int32	holdoff4 = 25;
-	int32	holdoff5 = 26;
-	int32	holdoff6 = 27;
-	int32	holdoff7 = 28;
-	int32	holdoff8 = 29;
-	int32	holdoff9 = 30;
-	int32	holdoff10 = 31;
-	int32	holdoff11 = 32;
-	int32	holdoff12 = 33;
-	int32	synceCpu = 34;
-	int32	swTs = 35;
-	int32	inband = 36;
-	int32	dumpRegs = 37;
-	int32	rawTs = 38;
-	int32	ptpCount = 39;
-	int32	ptpData = 40;
-	int32	devStatus = 41;
-	int32	aprLevel = 42;
-	int32	traceModule = 43;
-	int32	traceLevel = 44;
-	int32	tracePtp = 45;
-	int32	ppsMode = 46;
-	int32	mhz10Mode = 47;
-	int32	slavePortMask = 48;
-	int32	masterPortMask = 49;
-	int32	syncePortMask = 50;
+	int32		status = 1;
+	Param		profile = 2;
+	Param		domain = 3;
+	Param		forward = 4;
+	Param		twoStep = 5;
+	Param		priority2 = 6;
+	Param		ppsOut = 7;
+	Param		mhz10Out = 8;
+	Param		syncePort = 9;
+	Param		syncOpt = 10;
+	Param		esmcMode = 11;
+	Param		ssmMode = 12;
+	Param		qlEn1 = 13;
+	Param		qlEn2 = 14;
+	Param		qlEn3 = 15;
+	Param		qlEn4 = 16;
+	Param		qlEn5 = 17;
+	Param		qlEn6 = 18;
+	Param		qlEn7 = 19;
+	Param		qlEn8 = 20;
+	Param		qlEn9 = 21;
+	Param		qlEn10 = 22;
+	Param		qlEn11 = 23;
+	Param		qlEn12 = 24;
+	Param		ql1 = 25;
+	Param		ql2 = 26;
+	Param		ql3 = 27;
+	Param		ql4 = 28;
+	Param		ql5 = 29;
+	Param		ql6 = 30;
+	Param		ql7 = 31;
+	Param		ql8 = 32;
+	Param		ql9 = 33;
+	Param		ql10 = 34;
+	Param		ql11 = 35;
+	Param		ql12 = 36;
+	Param		holdoff1 = 37;
+	Param		holdoff2 = 38;
+	Param		holdoff3 = 39;
+	Param		holdoff4 = 40;
+	Param		holdoff5 = 41;
+	Param		holdoff6 = 42;
+	Param		holdoff7 = 43;
+	Param		holdoff8 = 44;
+	Param		holdoff9 = 45;
+	Param		holdoff10 = 46;
+	Param		holdoff11 = 47;
+	Param		holdoff12 = 48;
+	Param		synceCpu = 49;
+	Param		swTs = 50;
+	Param		inband = 51;
+	Param		dumpRegs = 52;
+	Param		rawTs = 53;
+	Param		ptpCount = 54;
+	Param		ptpData = 55;
+	Param		devStatus = 56;
+	Param		aprLevel = 57;
+	Param		traceModule = 58;
+	Param		traceLevel = 59;
+	Param		tracePtp = 60;
+	Param		ppsMode = 61;
+	Param		mhz10Mode = 62;
+	Param		slavePortMask = 63;
+	Param		masterPortMask = 64;
+	Param		syncePortMask = 65;
+	Param		freqCat = 66;
+	Param		hoSpecDur = 67;
 }
+
+message GnssParamsReply {
+	int32		status = 1;
+	Param		gnssSigGpsEn = 2;
+	Param		gnssSigGpsL1CAEn = 3;
+	Param		gnssSigGpsL2CEn = 4;
+	Param		gnssSigSbasEn = 5;
+	Param		gnssSigSbasL1CAEn = 6;
+	Param		gnssSigGalEn = 7;
+	Param		gnssSigGalE1En = 8;
+	Param		gnssSigGalE5BEn = 9;
+	Param		gnssSigBdsEn = 10;
+	Param		gnssSigBdsB1En = 11;
+	Param		gnssSigBdsB2En = 12;
+	Param		gnssSigQzssEn = 13;
+	Param		gnssSigQzssL1CAEn = 14;
+	Param		gnssSigQzssL1SEn = 15;
+	Param		gnssSigQzssL2CEn = 16;
+	Param		gnssSigGloEn = 17;
+	Param		gnssSigGloL1En = 18;
+	Param		gnssSigGloL2En = 19;
+	Param		gnssCableDelay = 20;
+	Param		gnssPulseDef = 21;
+	Param		gnssPulseDefLen = 22;
+	Param		gnssTP1En = 23;
+	Param		gnssFreqTP1 = 24;
+	Param		gnssFreqLockTP1 = 25;
+	Param		gnssUseLockedTP1 = 26;
+	Param		gnssDutyTP1 = 27;
+	Param		gnssDutyLockTP1 = 28;
+	Param		gnssTP2En = 29;
+	Param		gnssFreqTP2 = 30;
+	Param		gnssFreqLockTP2 = 31;
+	Param		gnssUseLockedTP2 = 32;
+	Param		gnssDutyTP2 = 33;
+	Param		gnssDutyLockTP2 = 34;
+	Param		gnssInfilMinElev = 35;
+	Param		gnssInfilMinCNO = 36;
+	Param		gnssMsgNmeaUsb = 37;
+	Param		gnssMsgUbxUsb = 38;
+	Param		gnssItfmEn = 39;
+	Param		gnssItfmAntSet = 40;
+	Param		gnssTMode = 41;
+	Param		gnssSvinMinDur = 42;
+	Param		gnssSvinAccLimit = 43;
+	Param		gnssLockMode = 44;
+	Param		gnssLockTh = 45;
+	Param		gnssClockOutEn = 46;
+}
+
+message GnssInfo {
+	int32		fwExtType = 1;
+	int32		fwExtVal = 2;
+	string		fwExtStr = 3;
+}
+
+message GnssInfoReply {
+	int32		status = 1;
+	int32		gnssFwType = 2;
+	int32		coreType = 3;
+	GnssInfo	fwExt0 = 4;
+	GnssInfo	fwExt1 = 5;
+	GnssInfo	fwExt2 = 6;
+	GnssInfo	fwExt3 = 7;
+	GnssInfo	fwExt4 = 8;
+	GnssInfo	fwExt5 = 9;
+	GnssInfo	fwExt6 = 10;
+	string		fwExtStr7 = 11;
+}
+
+message GnssStatusReply {
+	int32		status = 1;
+	int32		gnssStatus = 2;
+	int32		gnssFixType = 3;
+	int32		gnssFixMode = 4;
+	int32		gnssFixStatus = 5;
+	int32		satVisible = 6;
+	int32		satUsed = 7;
+	int32		gnssSvinValidFlag = 8;
+    int32		gnssSvinProgFlag = 9;
+	int32		gnssAccInLimits = 10;
+	int32		gnssTAcc = 11;
+	int32		gnssJamIndL1 = 12;
+    int32		gnssJamStateL1 = 13;
+	int32		gnssJamIndL2 = 14;
+    int32		gnssJamStateL2 = 15;
+    int32		gnssAntConnect = 16;
+	string		gnssFixModeStr = 17;
+	string		gnssFixStatusStr = 18;
+	string		gnssSvinValidFlagStr = 19;
+	string		gnssSvinProgFlagStr = 20;
+	string		gnssAccInLimitsStr = 21;
+	string		gnssJamIndL1Str = 22;
+	string		gnssJamStateL1Str = 23;
+	string		gnssJamIndL2Str = 24;
+	string		gnssJamStateL2Str = 25;
+	string		gnssAntConnectStr = 26;
+}
+
+message SatReply {
+	int32		status = 1;
+	int32		satNum  = 2;
+	int32		satType = 3;
+	int32		satStatus = 4;
+	int32		satGnssId = 5;
+	int32		satSvId = 6;
+	int32		satSigId = 7;
+	float		satSnr = 8;
+	int32		satPrn = 9;
+	float		satElevation = 10;
+	float		satAzimuth = 11;
+	int32		satHealth = 12;
+	int32		satUsed = 13;
+	string		satGnssSystem = 14;
+}
+
+message RestartIpcReply {
+	int32		status = 1;
+}
+
