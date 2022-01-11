@@ -117,6 +117,12 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	funcMap := template.FuncMap{
+		"inc": func(i int) int {
+			return i + 1
+		},
+	}
+
 	// Fetch the PtpOperatorConfig instance
 	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
 	err = r.Get(ctx, types.NamespacedName{Name: operatorName, Namespace: operatorNamespace}, defaultCfg)
@@ -135,7 +141,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	t, err := template.New("asset").Option("missingkey=error").Parse(string(content))
+	t, err := template.New("asset").Funcs(funcMap).Option("missingkey=error").Parse(string(content))
 	if err != nil {
 		return ctrl.Result{}, err
 	}

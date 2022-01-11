@@ -59,9 +59,9 @@ data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
 {{ range $i, $dev := .StsConfig.Spec.Interfaces }}
-    nicStr{{$i}} = {{$dev.EthName}}
-    qlEnable{{$i}} = {{$dev.QlEnable}}
-    holdOff{{$i}} = {{$dev.HoldOff}}
+    nicStr{{inc $i}} = {{$dev.EthName}}
+    qlEnable{{inc $i}} = {{$dev.QlEnable}}
+    holdOff{{inc $i}} = {{$dev.HoldOff}}
 {{end}}
     slavePortMask = {{printf "0x%x" .SlavePortMask}}
     masterPortMask = {{printf "0x%x" .MasterPortMask}}

@@ -111,13 +111,13 @@ spec:
                     default: image-registry.openshift-image-registry.svc:5000
                     type: string
                   iceVersion:
-                    default: 1.6.7
+                    default: 1.7.16
                     type: string
                   namespace:
                     default: sro
                     type: string
                   srcImage:
-                    default: quay.io/silicom/ice-driver-src:1.6.7
+                    default: quay.io/silicom/ice-driver-src:1.7.16
                     type: string
                   srcSvcPort:
                     default: 3000

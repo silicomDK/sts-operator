@@ -51,7 +51,7 @@ type SroCfg struct {
 	// +kubebuilder:validation:Optional
 	Build bool `json:"build,omitempty"`
 
-	// +kubebuilder:default:string="1.6.7"
+	// +kubebuilder:default:string="1.7.16"
 	// +kubebuilder:validation:Optional
 	IceVersion string `json:"iceVersion,omitempty"`
 
@@ -62,7 +62,7 @@ type SroCfg struct {
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
-	// +kubebuilder:default:string="quay.io/silicom/ice-driver-src:1.6.7"
+	// +kubebuilder:default:string="quay.io/silicom/ice-driver-src:1.7.16"
 	// +kubebuilder:validation:Optional
 	SrcImage string `json:"srcImage,omitempty"`
 
