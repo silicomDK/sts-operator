@@ -35,7 +35,7 @@ type StsOperatorConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	GpsSvcPort int `json:"gpsSvcPort,omitempty"`
 
-	// +kubebuilder:default:string="sts-silicom"
+	// +kubebuilder:default:string="openshift-operators"
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
