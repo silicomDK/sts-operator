@@ -52,7 +52,7 @@ type StsOperatorConfigReconciler struct {
 }
 
 const operatorName = "sts-operator-config"
-const operatorNamespace = "sts-silicom"
+const operatorNamespace = "openshift-operators"
 
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/status,verbs=get;update;patch
@@ -76,7 +76,7 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	err := r.Get(context.TODO(), types.NamespacedName{
 		Name: operatorName, Namespace: operatorNamespace}, operatorCfg)
 	if err != nil {
-		reqLogger.Error(err, "Failed to get Deafult Operator CR")
+		reqLogger.Error(err, fmt.Sprintf("Failed to get Deafult Operator CR name:%s, ns:%s\n", operatorName, operatorNamespace))
 		return ctrl.Result{}, err
 	}
 

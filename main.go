@@ -41,7 +41,7 @@ import (
 )
 
 const defaultName = "sts-operator-config"
-const defaultNamespace = "sts-silicom"
+const defaultNamespace = "openshift-operators"
 
 var (
 	scheme   = runtime.NewScheme()
