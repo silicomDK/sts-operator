@@ -203,7 +203,9 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	defer conn.Close()
 
 	// {"class":"VERSION","release":"3.23","rev":"3.23","proto_major":3,"proto_minor":14}
-	rsp, _ := bufio.NewReader(conn).ReadString('\n')
+	r := bufio.NewReader(conn)
+
+	rsp, _ := r.ReadString('\n')
 	if len(rsp) < 1 {
 		fmt.Printf("Bad GPS Read: %s\n", rsp)
 		return
@@ -215,23 +217,29 @@ func query_gpsd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 		return
 	}
 
+	fmt.Fprintf(conn, "?WATCH={\"enable\":true}")
 	fmt.Fprintf(conn, "?POLL;")
-	rsp, _ = bufio.NewReader(conn).ReadString('\n')
-	if len(rsp) < 1 {
-		fmt.Printf("Bad GPS Read: %s\n", rsp)
-		return
-	}
 
-	err = json.Unmarshal([]byte(rsp), &status)
-	if err != nil {
-		fmt.Println("Error occured during unmarshaling.")
-		return
-	}
+	for {
+		rsp, _ = r.ReadString('\n')
+		if len(rsp) < 1 {
+			fmt.Printf("Bad GPS Read: %s\n", rsp)
+			return
+		}
 
-	//  {"class":"POLL","time":"2021-11-29T13:46:36.790Z","active":0,
-	if status.Class != "POLL" {
-		fmt.Println(fmt.Sprintf("Error occured during POLL parsing. %s\n", rsp))
-		return
+		err = json.Unmarshal([]byte(rsp), &status)
+		if err != nil {
+			fmt.Println("Error occured during unmarshaling.")
+			return
+		}
+
+		//  {"class":"POLL","time":"2021-11-29T13:46:36.790Z","active":0,
+		if status.Class != "POLL" {
+			fmt.Println(fmt.Sprintf("Not POLL class. %s\n", rsp))
+			continue
+		}
+
+		break
 	}
 
 	stsNode.Status.GpsStatus.Time = status.Time
