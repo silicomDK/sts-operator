@@ -153,6 +153,37 @@ func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	cancel()
 }
 
+func init_gpsd(svc_str string) {
+	var gpsRsp GpsVersionRsp
+
+	conn, err := net.Dial("tcp", svc_str)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("Dial failed: %s: %v\n", svc_str, err))
+		return
+	}
+	defer conn.Close()
+
+	// {"class":"VERSION","release":"3.23","rev":"3.23","proto_major":3,"proto_minor":14}
+	rsp, _ := bufio.NewReader(conn).ReadString('\n')
+	if len(rsp) < 1 {
+		fmt.Printf("Bad GPS Read: %s\n", rsp)
+		return
+	}
+
+	err = json.Unmarshal([]byte(rsp), &gpsRsp)
+	if err != nil {
+		fmt.Println("Error occured during gpsRsp unmarshaling.")
+		return
+	}
+
+	fmt.Fprintf(conn, "?WATCH={\"enable\":true}")
+	rsp, _ = bufio.NewReader(conn).ReadString('\n')
+	if len(rsp) < 1 {
+		fmt.Printf("Bad GPS Read: %s\n", rsp)
+		return
+	}
+}
+
 /*
 {"class":"POLL","time":"2010-06-04T10:31:00.289Z","active":1,
     "tpv":[{"class":"TPV","device":"/dev/ttyUSB0",
@@ -263,6 +294,8 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	init_gpsd(gpsSvcStr)
 
 	for {
 		query_host(stsNode)
