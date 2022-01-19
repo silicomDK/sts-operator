@@ -138,21 +138,21 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: {{.StsConfig.Name}}-{{.NodeName}}
-  name: {{.StsConfig.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
+  name: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   namespace: {{.StsOperatorConfig.Namespace}}
   annotations:
     openshift.io/scc: {{.StsOperatorConfig.Namespace}}
 spec:
   selector:
     matchLabels:
-      app: {{.StsConfig.Name}}-{{.NodeName}}
+      app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   template:
     metadata:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
-        app: {{.StsConfig.Name}}-{{.NodeName}}
+        app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
     spec:
       shareProcessNamespace: true
       nodeName: {{.NodeName}}
@@ -164,52 +164,6 @@ spec:
       serviceAccount: {{.StsConfig.Name}}
       hostNetwork: true
       containers:
-      - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}
-        command: [ "/usr/bin/run-tsync_extts.sh" ]
-        name: {{.NodeName}}-tsyncextts
-        imagePullPolicy: Always
-        network_mode: host
-        securityContext:
-          privileged: true
-        volumeMounts:
-          - name: devfs
-            mountPath: /dev
-        env:
-          - name: WAIT_FOR_GPS
-{{- if .EnableGPS}}
-            value: "true"
-{{- else}}
-            value: "false"
-{{end}}
-{{- if eq .ProfileId 2}}
-          - name: GM_MODE
-            value: "-g"
-{{end}}
-          - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
-      - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
-        command: [ "/usr/bin/run-phc2sys.sh" ]
-        name: {{.NodeName}}-phc2sys
-        imagePullPolicy: Always
-        network_mode: host
-        env:
-          - name: WAIT_FOR_GPS
-{{- if .EnableGPS}}
-            value: "true"
-{{- else}}
-            value: "false"
-{{end}}
-          - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
-        volumeMounts:
-          - name: devfs
-            mountPath: /dev
-        securityContext:
-          privileged: true
-          readOnlyRootFilesystem: false
-          capabilities:
-            add:
-            - CAP_SYS_TIME
       - image: {{.StsOperatorConfig.Spec.Images.GrpcTsyncd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-grpc-tsyncd
@@ -233,7 +187,6 @@ spec:
         - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           name: {{.ServicePrefix}}-tsyncd
       - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
-        command: [ "/usr/bin/run-tsyncd.sh" ]
         imagePullPolicy: Always
         name: {{.NodeName}}-tsync
         env:
@@ -255,20 +208,143 @@ spec:
             subPath: tsyncd.conf
         securityContext:
           privileged: true
+      volumes:
+        - name: devfs
+          hostPath:
+            path: /dev
+        - name: {{.StsConfig.Name}}-tsync-conf
+          configMap:
+            defaultMode: 0777
+            name: {{.StsConfig.Name}}-tsync-conf
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
+  name: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
+  namespace: {{.StsOperatorConfig.Namespace}}
+  annotations:
+    openshift.io/scc: {{.StsOperatorConfig.Namespace}}
+spec:
+  selector:
+    matchLabels:
+      app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
+    spec:
+      shareProcessNamespace: true
+      nodeName: {{.NodeName}}
+      nodeSelector:
+        sts.silicom.com/ice-driver-available: "true"
+{{- range $k, $v := .StsConfig.Spec.NodeSelector }}
+        {{ $k }}: "{{ $v }}"
+{{- end }}
+      serviceAccount: {{.StsConfig.Name}}
+      hostNetwork: true
+      containers:
+      - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
+        name: {{.NodeName}}-phc2sys
+        imagePullPolicy: Always
+        network_mode: host
+        env:
+          - name: WAIT_FOR_GPS
+{{- if .EnableGPS}}
+            value: "true"
+{{- else}}
+            value: "false"
+{{end}}
+          - name: GPS_SVC_PORT
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+            - CAP_SYS_TIME
+      volumes:
+        - name: devfs
+          hostPath:
+            path: /dev
+
 {{- if .EnableGPS }}
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
+  name: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
+  namespace: {{.StsOperatorConfig.Namespace}}
+  annotations:
+    openshift.io/scc: {{.StsOperatorConfig.Namespace}}
+spec:
+  selector:
+    matchLabels:
+      app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
+    spec:
+      shareProcessNamespace: true
+      nodeName: {{.NodeName}}
+      nodeSelector:
+        sts.silicom.com/ice-driver-available: "true"
+{{- range $k, $v := .StsConfig.Spec.NodeSelector }}
+        {{ $k }}: "{{ $v }}"
+{{- end }}
+      serviceAccount: {{.StsConfig.Name}}
+      hostNetwork: true
+      containers:
+      - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}
+        name: {{.NodeName}}-tsyncextts
+        imagePullPolicy: Always
+        network_mode: host
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: devfs
+            mountPath: /dev
+        env:
+          - name: WAIT_FOR_GPS
+{{- if .EnableGPS}}
+            value: "true"
+{{- else}}
+            value: "false"
+{{end}}
+{{- if eq .ProfileId 2}}
+          - name: GM_MODE
+            value: "-g"
+{{end}}
+          - name: GPS_SVC_PORT
+            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
       - image: {{.StsOperatorConfig.Spec.Images.Gpsd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
-        readinessProbe:
-          tcpSocket:
-            port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-          initialDelaySeconds: 60
-          periodSeconds: 30
-        livenessProbe:
-          tcpSocket:
-            port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-          initialDelaySeconds: 60
-          periodSeconds: 30
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 30
+        # livenessProbe:
+        #   tcpSocket:
+        #     port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 30
         ports:
         - containerPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
           name: {{.ServicePrefix}}-gpsd
@@ -283,12 +359,8 @@ spec:
           readOnlyRootFilesystem: false
           seLinuxOptions:
             level: "s0"
-{{end}}
       volumes:
         - name: devfs
           hostPath:
             path: /dev
-        - name: {{.StsConfig.Name}}-tsync-conf
-          configMap:
-            defaultMode: 0777
-            name: {{.StsConfig.Name}}-tsync-conf
+{{end}}
