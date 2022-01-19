@@ -238,8 +238,6 @@ spec:
           - ""
           resources:
           - configmaps
-          - namespaces
-          - nodes
           - serviceaccounts
           - services
           verbs:
@@ -248,6 +246,15 @@ spec:
           - get
           - list
           - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
           - update
           - watch
         - apiGroups:

@@ -10,8 +10,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - namespaces
-  - nodes
   - serviceaccounts
   - services
   verbs:
@@ -20,6 +18,15 @@ rules:
   - get
   - list
   - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
   - update
   - watch
 - apiGroups:
