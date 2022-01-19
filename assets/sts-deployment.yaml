@@ -219,16 +219,16 @@ spec:
           capabilities:
             add:
             - CAP_SYS_ADMIN
-        readinessProbe:
-          tcpSocket:
-            port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-          initialDelaySeconds: 300
-          periodSeconds: 60
-        livenessProbe:
-          tcpSocket:
-            port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-          initialDelaySeconds: 300
-          periodSeconds: 60
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
+        #   initialDelaySeconds: 300
+        #   periodSeconds: 60
+        # livenessProbe:
+        #   tcpSocket:
+        #     port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 60
         ports:
         - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
           name: {{.ServicePrefix}}-tsyncd
