@@ -58,10 +58,11 @@ metadata:
 data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
-{{ range $i, $dev := .StsConfig.Spec.Interfaces }}
+{{range $i, $dev := .StsConfig.Spec.Interfaces}}
     nicStr{{inc $i}} = {{$dev.EthName}}
     qlEnable{{inc $i}} = {{$dev.QlEnable}}
     holdOff{{inc $i}} = {{$dev.HoldOff}}
+    ql{{inc $i}} = {{$dev.Ql}}
 {{end}}
     slavePortMask = {{printf "0x%x" .SlavePortMask}}
     masterPortMask = {{printf "0x%x" .MasterPortMask}}
@@ -69,11 +70,13 @@ data:
     phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
     IPCServer = 1
     domainNum = {{.StsConfig.Spec.DomainNumber}}
-    forwardable = 0
-    twoStep = 0
-    priority2 = 128
+    forwardable = {{.StsConfig.Spec.Forwardable}}
+    twoStep = {{.StsConfig.Spec.TwoStep}}
+    priority2 = {{.StsConfig.Spec.Priority2}}
+    modePPS = {{.StsConfig.Spec.ModePPS}}
     srcPPS = {{.StsConfig.Spec.SrcPPS}}
     src10MHz = {{.StsConfig.Spec.Src10MHz}}
+    mode10MHz = {{.StsConfig.Spec.Mode10MHz}}
     synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
     syncOption = {{.StsConfig.Spec.SyncOption}}
     synceCpu = {{.StsConfig.Spec.SynceCpu}}
@@ -87,7 +90,7 @@ data:
     aprLevel = 8
     traceModule = 23
     traceLevel = 8
-    tracePtpMsg = 0
+    tracePtpMsg = {{.StsConfig.Spec.TracePtpMsg}}
     whenWriteLog = 0
     debugAPI = 0
 

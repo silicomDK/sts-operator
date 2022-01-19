@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
 
 ---
 
@@ -12,7 +12,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
 rules:
 - apiGroups:
   - sts.silicom.com
@@ -25,14 +25,6 @@ rules:
   - update
   - create
   - delete
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  verbs:
-  - use
-  resourceNames:
-  - privileged
 
 ---
 
@@ -40,7 +32,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -48,7 +40,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
 
 ---
 
@@ -75,7 +67,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
 roleRef:
   kind: ClusterRole
   name: sts-plugin
@@ -89,7 +81,7 @@ metadata:
   labels:
     app: sts-plugin
   name: sts-plugin
-  namespace: {{.Spec.Namespace}}
+  namespace: {{.Namespace}}
   annotations:
     openshift.io/scc: silicom-sts
 spec:

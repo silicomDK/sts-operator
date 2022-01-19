@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -107,8 +106,18 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsConfig")
 
+	// Fetch the StsOperatorConfig instance
+	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
+
+	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
+	err := r.List(ctx, operatorCfgList, opts)
+	if err != nil {
+		reqLogger.Info("No Operator CR found in this namespace")
+		return ctrl.Result{}, nil
+	}
+
 	stsConfigList := &stsv1alpha1.StsConfigList{}
-	err := r.List(ctx, stsConfigList)
+	err = r.List(ctx, stsConfigList)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -123,17 +132,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		},
 	}
 
-	// Fetch the PtpOperatorConfig instance
-	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
-	err = r.Get(ctx, types.NamespacedName{Name: operatorName, Namespace: operatorNamespace}, defaultCfg)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Error(err, "Failed to get sts config",
-				"Namespace", operatorNamespace, "Name", operatorName)
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, err
-	}
+	operatorCfg := &operatorCfgList.Items[0]
 
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
 	if err != nil {
@@ -178,7 +177,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			cfgTemplate.StsConfig = &stsConfig
-			cfgTemplate.StsOperatorConfig = defaultCfg
+			cfgTemplate.StsOperatorConfig = operatorCfg
 			cfgTemplate.NodeName = node.Name
 			cfgTemplate.ServicePrefix = node.Name
 

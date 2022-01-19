@@ -35,10 +35,6 @@ type StsOperatorConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	GpsSvcPort int `json:"gpsSvcPort,omitempty"`
 
-	// +kubebuilder:default:string="openshift-operators"
-	// +kubebuilder:validation:Optional
-	Namespace string `json:"namespace,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	Images StsImages `json:"images,omitempty"`
 
@@ -58,7 +54,7 @@ type SroCfg struct {
 	// +kubebuilder:validation:Optional
 	Chart helmerv1beta1.HelmChart `json:"chart,omitempty"`
 
-	// +kubebuilder:default:string="sro"
+	// +kubebuilder:default:string="openshift-operators"
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 

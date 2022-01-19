@@ -31,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,9 +50,6 @@ type StsOperatorConfigReconciler struct {
 	Log    logr.Logger
 }
 
-const operatorName = "sts-operator-config"
-const operatorNamespace = "openshift-operators"
-
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/finalizers,verbs=update
@@ -72,13 +68,18 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	reqLogger.Info("Reconciling StsOperatorConfig")
 
 	// Fetch the StsOperatorConfig instance
-	operatorCfg := &stsv1alpha1.StsOperatorConfig{}
-	err := r.Get(context.TODO(), types.NamespacedName{
-		Name: operatorName, Namespace: operatorNamespace}, operatorCfg)
+	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
+
+	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
+	err := r.List(ctx, operatorCfgList, opts)
 	if err != nil {
-		reqLogger.Error(err, fmt.Sprintf("Failed to get Deafult Operator CR name:%s, ns:%s\n", operatorName, operatorNamespace))
+		reqLogger.Info("No Operator CR found in this namespace")
 		return ctrl.Result{}, err
 	}
+
+	//	finalizer := "sts.silicom.com/finalizer"
+
+	operatorCfg := &operatorCfgList.Items[0]
 
 	err = r.DeployNfd(operatorCfg)
 	if err != nil {
@@ -139,21 +140,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
-	// Don't create another service in another namespace without deleting the default
-	if svc.Namespace != operatorNamespace {
-		if err := r.Get(context.TODO(), client.ObjectKey{
-			Namespace: svc.Namespace,
-			Name:      svc.Name,
-		}, svc); err != nil {
-			err = r.Delete(context.TODO(), svc)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: svc.Namespace,
+		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      svc.Name,
 	}, svc); err != nil {
 
@@ -205,21 +193,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
-	// Don't create another service in another namespace without deleting the default
-	if deployment.Namespace != operatorNamespace {
-		if err := r.Get(context.TODO(), client.ObjectKey{
-			Namespace: deployment.Namespace,
-			Name:      deployment.Name,
-		}, deployment); err != nil {
-			err = r.Delete(context.TODO(), deployment)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: deployment.Namespace,
+		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      deployment.Name,
 	}, deployment); err != nil {
 
@@ -276,7 +251,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	}
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: sr.Namespace,
+		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      sr.Name,
 	}, sr); err != nil {
 
@@ -298,8 +273,8 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 
 	nfdOperand := &nfdv1.NodeFeatureDiscovery{}
 	nfdOperand.Name = "nfd-sts-silicom"
-	nfdOperand.Namespace = operatorCfg.Spec.Namespace
-	nfdOperand.Spec.Operand.Namespace = operatorCfg.Spec.Namespace
+	nfdOperand.Namespace = operatorCfg.Namespace
+	nfdOperand.Spec.Operand.Namespace = operatorCfg.Namespace
 
 	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
 	if err != nil {
@@ -333,6 +308,8 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 	var buff bytes.Buffer
 	var objects []client.Object
+
+	fmt.Printf("Starting plugin in ns: %s\n", operatorCfg.Namespace)
 
 	content, err := ioutil.ReadFile("/assets/sts-plugin.yaml")
 	if err != nil {

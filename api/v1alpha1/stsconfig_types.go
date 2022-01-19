@@ -42,11 +42,23 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	DomainNumber int `json:"domainNumber,omitempty"`
 
+	// +kubebuilder:default:=2
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:Optional
+	ModePPS int `json:"modePPS,omitempty"`
+
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:Optional
 	SrcPPS int `json:"srcPPS,omitempty"`
+
+	// +kubebuilder:default:=2
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=3
+	// +kubebuilder:validation:Optional
+	Mode10MHz int `json:"mode10MHz,omitempty"`
 
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
@@ -77,6 +89,30 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Maximum=40
 	// +kubebuilder:validation:Optional
 	SynceCpu int `json:"synceCpu,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
+	TwoStep int `json:"twoStep,omitempty"`
+
+	// +kubebuilder:default:=128
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=255
+	// +kubebuilder:validation:Optional
+	Priority2 int `json:"priority2,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
+	Forwardable int `json:"forwardable,omitempty"`
+
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10
+	// +kubebuilder:validation:Optional
+	TracePtpMsg int `json:"tracePtpMsg,omitempty"`
 }
 
 type StsInterfaceSpec struct {
@@ -105,6 +141,12 @@ type StsInterfaceSpec struct {
 	// +kubebuilder:validation:Maximum=1
 	// +kubebuilder:validation:Optional
 	QlEnable int `json:"qlEnable,omitempty"`
+
+	// +kubebuilder:default:=4
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=7
+	// +kubebuilder:validation:Optional
+	Ql int `json:"ql,omitempty"`
 }
 
 // StsConfigStatus defines the observed state of StsConfig
