@@ -36,6 +36,11 @@ spec:
           spec:
             description: StsConfigSpec defines the desired state of StsConfig
             properties:
+              aprLevel:
+                default: 0
+                maximum: 8
+                minimum: 0
+                type: integer
               domainNumber:
                 default: 24
                 maximum: 48

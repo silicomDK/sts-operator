@@ -87,7 +87,7 @@ data:
     countDelay = 0
     dataDelay = 0
     statDelay = 0
-    aprLevel = 8
+    aprLevel = {{.StsConfig.Spec.AprLevel}}
     traceModule = 23
     traceLevel = {{.StsConfig.Spec.TraceLevel}}
     tracePtpMsg = {{.StsConfig.Spec.TracePtpMsg}}

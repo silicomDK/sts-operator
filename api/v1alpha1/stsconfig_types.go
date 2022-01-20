@@ -131,6 +131,12 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Maximum=2
 	// +kubebuilder:validation:Optional
 	SsmMode int `json:"ssmMode,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=8
+	// +kubebuilder:validation:Optional
+	AprLevel int `json:"aprLevel,omitempty"`
 }
 
 type StsInterfaceSpec struct {
