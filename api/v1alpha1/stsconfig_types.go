@@ -82,7 +82,7 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=2
 	// +kubebuilder:validation:Optional
-	SyncOption int `json:"synceOption,omitempty"`
+	SyncOption int `json:"syncOption,omitempty"`
 
 	// +kubebuilder:default:=10
 	// +kubebuilder:validation:Minimum=1
@@ -113,6 +113,24 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Maximum=10
 	// +kubebuilder:validation:Optional
 	TracePtpMsg int `json:"tracePtpMsg,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=8
+	// +kubebuilder:validation:Optional
+	TraceLevel int `json:"traceLevel,omitempty"`
+
+	// +kubebuilder:default:=2
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:Optional
+	EsmcMode int `json:"esmcMode,omitempty"`
+
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:Optional
+	SsmMode int `json:"ssmMode,omitempty"`
 }
 
 type StsInterfaceSpec struct {

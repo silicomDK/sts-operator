@@ -39,6 +39,11 @@ spec:
                 maximum: 48
                 minimum: 24
                 type: integer
+              esmcMode:
+                default: 2
+                maximum: 2
+                minimum: 1
+                type: integer
               forwardable:
                 default: 0
                 maximum: 1
@@ -126,19 +131,29 @@ spec:
                 maximum: 3
                 minimum: 1
                 type: integer
+              ssmMode:
+                default: 1
+                maximum: 2
+                minimum: 1
+                type: integer
+              syncOption:
+                default: 1
+                maximum: 2
+                minimum: 1
+                type: integer
               synceCpu:
                 default: 10
                 maximum: 40
                 minimum: 1
                 type: integer
-              synceOption:
-                default: 1
-                maximum: 2
-                minimum: 1
-                type: integer
               synceRecClkPort:
                 default: 0
                 maximum: 7
+                minimum: 0
+                type: integer
+              traceLevel:
+                default: 0
+                maximum: 8
                 minimum: 0
                 type: integer
               tracePtpMsg:
