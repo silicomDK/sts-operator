@@ -115,6 +115,8 @@ func query_host(stsNode *stsv1alpha1.StsNode) {
 
 		stsNode.Status.EthInterfaces = append(stsNode.Status.EthInterfaces, nodeInterface)
 	}
+	fmt.Printf("%v\n", stsNode.Status.EthInterfaces)
+
 }
 
 func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
@@ -247,7 +249,17 @@ func main() {
 	}
 
 	for {
-		query_host(stsNode)
+
+		err = k8sClient.Get(context.Background(),
+			client.ObjectKey{
+				Namespace: namespace,
+				Name:      nodeName,
+			}, stsNode)
+		if err != nil {
+			if err = k8sClient.Create(context.TODO(), stsNode); err != nil {
+				panic(err.Error())
+			}
+		}
 
 		err = k8sClient.Get(context.TODO(),
 			client.ObjectKey{
@@ -256,6 +268,8 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
+
+		query_host(stsNode)
 
 		if stsNode.Status.DriverAvailable {
 			node.Labels["sts.silicom.com/ice-driver-available"] = "true"
@@ -268,16 +282,11 @@ func main() {
 			panic(err.Error())
 		}
 
-		err = k8sClient.Get(context.Background(),
-			client.ObjectKey{
-				Namespace: namespace,
-				Name:      nodeName,
-			}, stsNode)
-		if err != nil {
-			if err = k8sClient.Create(context.TODO(), stsNode); err != nil {
-				panic(err.Error())
-			}
+		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
+			fmt.Printf("Update failed: %v\n", err)
 		}
+
+		fmt.Printf("Updated %v\n", stsNode)
 
 		query_tsyncd(grpcSvcStr, stsNode)
 		query_gpsd(gpsSvcStr, stsNode)
