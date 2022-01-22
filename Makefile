@@ -3,8 +3,8 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
-IMG_VERSION ?= 0.0.1
+VERSION ?= 0.0.1-dev
+IMG_VERSION ?= 0.0.1-dev
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -14,6 +14,10 @@ IMG_VERSION ?= 0.0.1
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
+
+COMMUNITY_OPERATORS_DIR :=  ~/src/community-operators-prod
+COMMUNITY_OPERATORS_VER := 0.0.1
+COMMUNITY_OPERATORS_OP  := silicom-sts-operator
 
 # DEFAULT_CHANNEL defines the default channel used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
@@ -221,3 +225,8 @@ ice.tgz:
 	tar xvf ice.tgz -C src
 
 bundle-all: generate manifests bundle bundle-build
+
+community-bundle:
+	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/sts-manager-config_v1_configmap.yaml

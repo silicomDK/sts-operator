@@ -130,6 +130,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 			Annotations: map[string]string{
 				"openshift.io/scc": "sts-silicom",
 			},
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: v1.ServiceSpec{
 			Type:     "NodePort",
@@ -165,6 +171,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
 			Namespace: operatorCfg.Spec.Sro.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -218,6 +230,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-special-resource",
 			Namespace: operatorCfg.Spec.Sro.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
@@ -276,9 +294,19 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 
 func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 
-	nfdOperand := &nfdv1.NodeFeatureDiscovery{}
-	nfdOperand.Name = "nfd-sts-silicom"
-	nfdOperand.Namespace = operatorCfg.Namespace
+	nfdOperand := &nfdv1.NodeFeatureDiscovery{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nfd-sts-silicom",
+			Namespace: operatorCfg.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
+		},
+	}
+
 	nfdOperand.Spec.Operand.Namespace = operatorCfg.Namespace
 
 	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
@@ -313,8 +341,98 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 	var buff bytes.Buffer
 	var objects []client.Object
+	//	privileged := true
 
 	fmt.Printf("Starting plugin in ns: %s\n", operatorCfg.Namespace)
+
+	// daemonset := &appsv1.DaemonSet{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      "sts-plugin",
+	// 		Namespace: operatorCfg.Namespace,
+	// 		Labels: map[string]string{
+	// 			"app": "sts-plugin",
+	// 		},
+	// 		OwnerReferences: []metav1.OwnerReference{{
+	// 			Kind:       operatorCfg.Kind,
+	// 			APIVersion: operatorCfg.APIVersion,
+	// 			Name:       operatorCfg.Name,
+	// 			UID:        operatorCfg.UID,
+	// 		}},
+	// 	},
+	// 	Spec: appsv1.DaemonSetSpec{
+	// 		Selector: &metav1.LabelSelector{
+	// 			MatchLabels: map[string]string{
+	// 				"app": "sts-plugin",
+	// 			},
+	// 		},
+	// 		Template: v1.PodTemplateSpec{
+	// 			ObjectMeta: metav1.ObjectMeta{
+	// 				Labels: map[string]string{
+	// 					"app": "sts-plugin",
+	// 				},
+	// 			},
+	// 			Spec: v1.PodSpec{
+	// 				NodeSelector: map[string]string{
+	// 					"feature.node.kubernetes.io/custom-silicom.sts.devices": "true",
+	// 				},
+	// 				ServiceAccountName: "sts-plugin",
+	// 				HostNetwork:        true,
+	// 				Containers: []v1.Container{
+	// 					{
+	// 						Name:            "sts-plugin",
+	// 						Image:           operatorCfg.Spec.Images.StsPlugin,
+	// 						ImagePullPolicy: "Always",
+	// 						SecurityContext: &v1.SecurityContext{
+	// 							Privileged: &privileged,
+	// 						},
+	// 						Env: []v1.EnvVar{
+	// 							{
+	// 								Name:  "GPS_SVC_PORT",
+	// 								Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GpsSvcPort),
+	// 							},
+	// 							{
+	// 								Name:  "GRPC_SVC_PORT",
+	// 								Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GrpcSvcPort),
+	// 							},
+	// 							{
+	// 								Name: "NODE_NAME",
+	// 								ValueFrom: &v1.EnvVarSource{
+	// 									FieldRef: &v1.ObjectFieldSelector{
+	// 										FieldPath: "spec.nodeName",
+	// 									},
+	// 								},
+	// 							},
+	// 							{
+	// 								Name: "NAMESPACE",
+	// 								ValueFrom: &v1.EnvVarSource{
+	// 									FieldRef: &v1.ObjectFieldSelector{
+	// 										FieldPath: "metadata.namespace",
+	// 									},
+	// 								},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// }
+
+	// if err := r.Get(context.TODO(), client.ObjectKey{
+	// 	Namespace: daemonset.Namespace,
+	// 	Name:      daemonset.Name,
+	// }, daemonset); err != nil {
+
+	// 	err = r.Create(context.TODO(), daemonset)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// } else {
+	// 	r.Update(context.TODO(), daemonset)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
 
 	content, err := ioutil.ReadFile("/assets/sts-plugin.yaml")
 	if err != nil {
@@ -337,6 +455,13 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 	rx := regexp.MustCompile("\n-{3}")
 	objectsDefs := rx.Split(buff.String(), -1)
 
+	ownerRefs := []metav1.OwnerReference{{
+		Kind:       operatorCfg.Kind,
+		APIVersion: operatorCfg.APIVersion,
+		Name:       operatorCfg.Name,
+		UID:        operatorCfg.UID,
+	}}
+
 	for _, objectDef := range objectsDefs {
 		obj := unstructured.Unstructured{}
 		r := strings.NewReader(objectDef)
@@ -346,6 +471,8 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 			fmt.Println("ERROR: Decoding YAML failure")
 			return err
 		}
+
+		obj.SetOwnerReferences(ownerRefs)
 		objects = append(objects, &obj)
 	}
 

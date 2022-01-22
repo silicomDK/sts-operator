@@ -31,6 +31,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -77,6 +78,9 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 	}
 }
 
+//
+// Even though namespaces are mentioned here, OLM will overwrite them anyways, but we will still have a Role, not ClusterRole.
+//
 //+kubebuilder:rbac:groups="",resources=services;configmaps;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes;namespaces,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
@@ -215,6 +219,7 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					return ctrl.Result{}, err
 				}
 
+				obj.SetOwnerReferences(ownerRefs)
 				objects = append(objects, &obj)
 			}
 
@@ -261,6 +266,8 @@ func (r *StsConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	ctrl.NewControllerManagedBy(mgr). // Create the Controller
 						For(&stsv1alpha1.StsConfig{}). // StsConfig is the Application API
 						Owns(&appsv1.DaemonSet{}).     // StsConfig owns Daemonsets created by it
+						Owns(&v1.Node{}).              // Listen for changes on node tags
+
 						Complete(r)
 	return nil
 }
