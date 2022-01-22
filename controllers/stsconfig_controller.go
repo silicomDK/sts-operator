@@ -113,9 +113,16 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
 	err := r.List(ctx, operatorCfgList, opts)
 	if err != nil {
-		reqLogger.Info("No Operator CR found in this namespace")
-		return ctrl.Result{}, nil
+		reqLogger.Error(err, "Failed to get operator config")
+		return ctrl.Result{}, err
 	}
+
+	if len(operatorCfgList.Items) == 0 {
+		reqLogger.Info("No Operator CR found in this namespace")
+		return ctrl.Result{}, err
+	}
+
+	operatorCfg := &operatorCfgList.Items[0]
 
 	stsConfigList := &stsv1alpha1.StsConfigList{}
 	err = r.List(ctx, stsConfigList)
@@ -132,8 +139,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return i + 1
 		},
 	}
-
-	operatorCfg := &operatorCfgList.Items[0]
 
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
 	if err != nil {
@@ -160,12 +165,19 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 		reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
 
+		ownerRefs := []metav1.OwnerReference{{
+			Kind:       stsConfig.Kind,
+			APIVersion: stsConfig.APIVersion,
+			Name:       stsConfig.Name,
+			UID:        stsConfig.UID,
+		}}
+
 		cfgTemplate := &StsConfigTemplate{}
 		for _, node := range nodeList.Items {
 
 			var buff bytes.Buffer
 
-			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
+			reqLogger.Info(fmt.Sprintf("Creating/Updating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
 
 			cfgTemplate.EnableGPS = false
 			if stsConfig.Spec.Mode == "T-GM.8275.1" {

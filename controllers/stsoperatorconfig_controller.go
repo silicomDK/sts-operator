@@ -67,17 +67,22 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsOperatorConfig")
 
-	// Fetch the StsOperatorConfig instance
+	// Fetch the StsOperatorConfig instance, we don't care about what it is
+	// named, just get the first.
+	// In case there are > 1 configs, get the list and use the first.
 	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
 
 	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
 	err := r.List(ctx, operatorCfgList, opts)
 	if err != nil {
-		reqLogger.Info("No Operator CR found in this namespace")
+		reqLogger.Error(err, "Failed to get operator config")
 		return ctrl.Result{}, err
 	}
 
-	//	finalizer := "sts.silicom.com/finalizer"
+	if len(operatorCfgList.Items) == 0 {
+		reqLogger.Info("No Operator CR found in this namespace")
+		return ctrl.Result{}, err
+	}
 
 	operatorCfg := &operatorCfgList.Items[0]
 
