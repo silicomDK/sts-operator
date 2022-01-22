@@ -208,7 +208,7 @@ spec:
                   8 - Enable Trace for ANNOUNCE Messages \n 9 - Enable Trace for SIGNAL
                   Messages \n 10 - Enable Trace for MANAGEMENT Messages"
                 maximum: 10
-                minimum: 1
+                minimum: -1
                 type: integer
               twoStep:
                 default: 0

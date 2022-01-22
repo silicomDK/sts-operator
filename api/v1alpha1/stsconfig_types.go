@@ -169,7 +169,7 @@ type StsConfigSpec struct {
 	Forwardable int `json:"forwardable,omitempty"`
 
 	// +kubebuilder:default:=-1
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=-1
 	// +kubebuilder:validation:Maximum=10
 	// +kubebuilder:validation:Optional
 	//Trace PTP Message
