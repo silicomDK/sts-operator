@@ -115,8 +115,6 @@ func query_host(stsNode *stsv1alpha1.StsNode) {
 
 		stsNode.Status.EthInterfaces = append(stsNode.Status.EthInterfaces, nodeInterface)
 	}
-	fmt.Printf("%v\n", stsNode.Status.EthInterfaces)
-
 }
 
 func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
@@ -285,8 +283,6 @@ func main() {
 		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {
 			fmt.Printf("Update failed: %v\n", err)
 		}
-
-		fmt.Printf("Updated %v\n", stsNode)
 
 		query_tsyncd(grpcSvcStr, stsNode)
 		query_gpsd(gpsSvcStr, stsNode)
