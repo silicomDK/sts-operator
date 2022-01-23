@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -31,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,9 +51,6 @@ type StsOperatorConfigReconciler struct {
 	Log    logr.Logger
 }
 
-const operatorName = "sts-operator-config"
-const operatorNamespace = "openshift-operators"
-
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=sts.silicom.com,resources=stsoperatorconfigs/finalizers,verbs=update
@@ -71,14 +68,35 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsOperatorConfig")
 
-	// Fetch the StsOperatorConfig instance
-	operatorCfg := &stsv1alpha1.StsOperatorConfig{}
-	err := r.Get(context.TODO(), types.NamespacedName{
-		Name: operatorName, Namespace: operatorNamespace}, operatorCfg)
+	// For now, only use CRs in the operators namespace
+	if req.NamespacedName.Namespace != os.Getenv("NAMESPACE") {
+		reqLogger.Info("Ignoring Operator CR")
+		return ctrl.Result{}, nil
+	}
+
+	// Fetch the StsOperatorConfig instance, we don't care about what it is
+	// named, just get the first.
+	// In case there are > 1 configs, get the list and use the first.
+	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
+
+	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
+	err := r.List(ctx, operatorCfgList, opts)
 	if err != nil {
-		reqLogger.Error(err, fmt.Sprintf("Failed to get Deafult Operator CR name:%s, ns:%s\n", operatorName, operatorNamespace))
+		reqLogger.Error(err, "Failed to get operator config")
 		return ctrl.Result{}, err
 	}
+
+	if len(operatorCfgList.Items) == 0 {
+		reqLogger.Info("No Operator CR found in this namespace")
+		return ctrl.Result{}, err
+	}
+
+	if len(operatorCfgList.Items) > 1 {
+		reqLogger.Info("WARNING: There are 2 Operator CR found in this namespace, please remove 1")
+		return ctrl.Result{}, err
+	}
+
+	operatorCfg := &operatorCfgList.Items[0]
 
 	err = r.DeployNfd(operatorCfg)
 	if err != nil {
@@ -124,6 +142,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 			Annotations: map[string]string{
 				"openshift.io/scc": "sts-silicom",
 			},
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: v1.ServiceSpec{
 			Type:     "NodePort",
@@ -139,21 +163,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
-	// Don't create another service in another namespace without deleting the default
-	if svc.Namespace != operatorNamespace {
-		if err := r.Get(context.TODO(), client.ObjectKey{
-			Namespace: svc.Namespace,
-			Name:      svc.Name,
-		}, svc); err != nil {
-			err = r.Delete(context.TODO(), svc)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: svc.Namespace,
+		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      svc.Name,
 	}, svc); err != nil {
 
@@ -172,6 +183,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
 			Namespace: operatorCfg.Spec.Sro.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -205,19 +222,6 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
-	// Don't create another service in another namespace without deleting the default
-	if deployment.Namespace != operatorNamespace {
-		if err := r.Get(context.TODO(), client.ObjectKey{
-			Namespace: deployment.Namespace,
-			Name:      deployment.Name,
-		}, deployment); err != nil {
-			err = r.Delete(context.TODO(), deployment)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: deployment.Namespace,
 		Name:      deployment.Name,
@@ -238,6 +242,12 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-special-resource",
 			Namespace: operatorCfg.Spec.Sro.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
@@ -276,7 +286,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	}
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: sr.Namespace,
+		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      sr.Name,
 	}, sr); err != nil {
 
@@ -296,10 +306,20 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 
 func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
 
-	nfdOperand := &nfdv1.NodeFeatureDiscovery{}
-	nfdOperand.Name = "nfd-sts-silicom"
-	nfdOperand.Namespace = operatorCfg.Spec.Namespace
-	nfdOperand.Spec.Operand.Namespace = operatorCfg.Spec.Namespace
+	nfdOperand := &nfdv1.NodeFeatureDiscovery{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nfd-sts-silicom",
+			Namespace: operatorCfg.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
+		},
+	}
+
+	nfdOperand.Spec.Operand.Namespace = operatorCfg.Namespace
 
 	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
 	if err != nil {
@@ -334,6 +354,8 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 	var buff bytes.Buffer
 	var objects []client.Object
 
+	fmt.Printf("Starting plugin in ns: %s\n", operatorCfg.Namespace)
+
 	content, err := ioutil.ReadFile("/assets/sts-plugin.yaml")
 	if err != nil {
 		fmt.Println("ERROR: Loading sts-plugin.yaml file")
@@ -355,6 +377,13 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 	rx := regexp.MustCompile("\n-{3}")
 	objectsDefs := rx.Split(buff.String(), -1)
 
+	ownerRefs := []metav1.OwnerReference{{
+		Kind:       operatorCfg.Kind,
+		APIVersion: operatorCfg.APIVersion,
+		Name:       operatorCfg.Name,
+		UID:        operatorCfg.UID,
+	}}
+
 	for _, objectDef := range objectsDefs {
 		obj := unstructured.Unstructured{}
 		r := strings.NewReader(objectDef)
@@ -364,6 +393,8 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 			fmt.Println("ERROR: Decoding YAML failure")
 			return err
 		}
+
+		obj.SetOwnerReferences(ownerRefs)
 		objects = append(objects, &obj)
 	}
 
@@ -374,22 +405,24 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 		key := client.ObjectKeyFromObject(obj)
 
 		if err := r.Get(context.TODO(), key, old); err != nil {
-			if err := r.Create(context.TODO(), obj); err != nil {
-				if err != nil {
-					panic(err)
-				}
+			err := r.Create(context.TODO(), obj)
+			if err != nil {
+				panic(err)
 			} else {
-				if !equality.Semantic.DeepDerivative(obj, old) {
-					obj.SetResourceVersion(old.GetResourceVersion())
-					if err := r.Update(context.TODO(), obj); err != nil {
-						fmt.Println("ERROR: Update failed", "key", key, "GroupVersionKind", gvk)
-						return err
-					}
-					fmt.Println("Object updated", "key", key, "GroupVersionKind", gvk)
-				} else {
-					fmt.Println("Object has not changed", "key", key, "GroupVersionKind", gvk)
-				}
+				fmt.Println("Object created", "key", key, "GroupVersionKind", gvk)
 			}
+		} else {
+			if !equality.Semantic.DeepDerivative(obj, old) {
+				obj.SetResourceVersion(old.GetResourceVersion())
+				if err := r.Update(context.TODO(), obj); err != nil {
+					fmt.Println("ERROR: Update failed", "key", key, "GroupVersionKind", gvk)
+					return err
+				}
+				fmt.Println("Object updated", "key", key, "GroupVersionKind", gvk)
+			} else {
+				fmt.Println("Object has not changed", "key", key, "GroupVersionKind", gvk)
+			}
+
 		}
 	}
 	return nil

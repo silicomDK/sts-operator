@@ -31,9 +31,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +78,10 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 	}
 }
 
+//
+// Even though namespaces are mentioned here, OLM will overwrite them anyways, but we will still have a Role, not ClusterRole.
+//
+
 //+kubebuilder:rbac:groups="",resources=services;nodes;configmaps;serviceaccounts;namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -107,13 +111,28 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsConfig")
 
-	stsConfigList := &stsv1alpha1.StsConfigList{}
-	err := r.List(ctx, stsConfigList)
+	// Fetch the StsOperatorConfig instance
+	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
+
+	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
+	err := r.List(ctx, operatorCfgList, opts)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		reqLogger.Error(err, "Can't retrieve StsConfigList")
+		reqLogger.Error(err, "Failed to get operator config")
+		return ctrl.Result{}, err
+	}
+
+	if len(operatorCfgList.Items) == 0 {
+		reqLogger.Info("No Operator CR found in this namespace")
+		return ctrl.Result{}, nil
+	}
+
+	operatorCfg := &operatorCfgList.Items[0]
+
+	stsConfig := &stsv1alpha1.StsConfig{}
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: req.NamespacedName.Namespace,
+		Name:      req.NamespacedName.Name,
+	}, stsConfig); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -121,18 +140,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		"inc": func(i int) int {
 			return i + 1
 		},
-	}
-
-	// Fetch the PtpOperatorConfig instance
-	defaultCfg := &stsv1alpha1.StsOperatorConfig{}
-	err = r.Get(ctx, types.NamespacedName{Name: operatorName, Namespace: operatorNamespace}, defaultCfg)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Error(err, "Failed to get sts config",
-				"Namespace", operatorNamespace, "Name", operatorName)
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, err
 	}
 
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
@@ -146,88 +153,98 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	for _, stsConfig := range stsConfigList.Items {
+	nodeList := &v1.NodeList{}
+	err = r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		reqLogger.Error(err, "Can't retreive NodeList")
+		return ctrl.Result{}, err
+	}
 
-		nodeList := &v1.NodeList{}
-		err := r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
+	reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
+
+	ownerRefs := []metav1.OwnerReference{{
+		Kind:       stsConfig.Kind,
+		APIVersion: stsConfig.APIVersion,
+		Name:       stsConfig.Name,
+		UID:        stsConfig.UID,
+	}, {
+		Kind:       operatorCfg.Kind,
+		APIVersion: operatorCfg.APIVersion,
+		Name:       operatorCfg.Name,
+		UID:        operatorCfg.UID,
+	}}
+
+	cfgTemplate := &StsConfigTemplate{}
+	for _, node := range nodeList.Items {
+
+		var buff bytes.Buffer
+
+		reqLogger.Info(fmt.Sprintf("Creating/Updating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
+
+		cfgTemplate.EnableGPS = false
+		if stsConfig.Spec.Mode == "T-GM.8275.1" {
+			cfgTemplate.ProfileId = 2
+			cfgTemplate.EnableGPS = true
+		} else if stsConfig.Spec.Mode == "T-BC-8275.1" {
+			cfgTemplate.ProfileId = 1
+		} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
+			cfgTemplate.ProfileId = 3
+		}
+
+		cfgTemplate.StsConfig = stsConfig
+		cfgTemplate.StsOperatorConfig = operatorCfg
+		cfgTemplate.NodeName = node.Name
+		cfgTemplate.ServicePrefix = node.Name
+
+		r.interfacesToBitmask(cfgTemplate, stsConfig.Spec.Interfaces)
+
+		err = t.Execute(&buff, cfgTemplate)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				return ctrl.Result{}, nil
-			}
-			reqLogger.Error(err, "Can't retreive NodeList")
+			reqLogger.Error(err, "Template execute failure")
 			return ctrl.Result{}, err
 		}
 
-		reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
+		rx := regexp.MustCompile("\n-{3}")
+		objectsDefs := rx.Split(buff.String(), -1)
 
-		cfgTemplate := &StsConfigTemplate{}
-		for _, node := range nodeList.Items {
-
-			var buff bytes.Buffer
-
-			reqLogger.Info(fmt.Sprintf("Creating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
-
-			cfgTemplate.EnableGPS = false
-			if stsConfig.Spec.Mode == "T-GM.8275.1" {
-				cfgTemplate.ProfileId = 2
-				cfgTemplate.EnableGPS = true
-			} else if stsConfig.Spec.Mode == "T-BC-8275.1" {
-				cfgTemplate.ProfileId = 1
-			} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
-				cfgTemplate.ProfileId = 3
-			}
-
-			cfgTemplate.StsConfig = &stsConfig
-			cfgTemplate.StsOperatorConfig = defaultCfg
-			cfgTemplate.NodeName = node.Name
-			cfgTemplate.ServicePrefix = node.Name
-
-			r.interfacesToBitmask(cfgTemplate, stsConfig.Spec.Interfaces)
-
-			err = t.Execute(&buff, cfgTemplate)
+		for _, objectDef := range objectsDefs {
+			obj := unstructured.Unstructured{}
+			r := strings.NewReader(objectDef)
+			decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
+			err := decoder.Decode(&obj)
 			if err != nil {
-				reqLogger.Error(err, "Template execute failure")
+				reqLogger.Error(err, "Decoding YAML failure")
 				return ctrl.Result{}, err
 			}
 
-			rx := regexp.MustCompile("\n-{3}")
-			objectsDefs := rx.Split(buff.String(), -1)
+			obj.SetOwnerReferences(ownerRefs)
+			objects = append(objects, &obj)
+		}
 
-			for _, objectDef := range objectsDefs {
-				obj := unstructured.Unstructured{}
-				r := strings.NewReader(objectDef)
-				decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
-				err := decoder.Decode(&obj)
-				if err != nil {
-					reqLogger.Error(err, "Decoding YAML failure")
+		for _, obj := range objects {
+			gvk := obj.GetObjectKind().GroupVersionKind()
+			old := &unstructured.Unstructured{}
+			old.SetGroupVersionKind(gvk)
+			key := client.ObjectKeyFromObject(obj)
+			if err := r.Get(ctx, key, old); err != nil {
+				if err := r.Create(ctx, obj); err != nil {
+					reqLogger.Error(err, "Create failed", "key", key, "GroupVersionKind", gvk)
 					return ctrl.Result{}, err
 				}
-
-				objects = append(objects, &obj)
-			}
-
-			for _, obj := range objects {
-				gvk := obj.GetObjectKind().GroupVersionKind()
-				old := &unstructured.Unstructured{}
-				old.SetGroupVersionKind(gvk)
-				key := client.ObjectKeyFromObject(obj)
-				if err := r.Get(ctx, key, old); err != nil {
-					if err := r.Create(ctx, obj); err != nil {
-						reqLogger.Error(err, "Create failed", "key", key, "GroupVersionKind", gvk)
+				reqLogger.Info("Object Created", "key", key, "GroupVersionKind", gvk)
+			} else {
+				if !equality.Semantic.DeepDerivative(obj, old) {
+					obj.SetResourceVersion(old.GetResourceVersion())
+					if err := r.Update(ctx, obj); err != nil {
+						reqLogger.Error(err, "Update failed", "key", key, "GroupVersionKind", gvk)
 						return ctrl.Result{}, err
 					}
-					reqLogger.Info("Object created")
+					reqLogger.Info("Object updated", "key", key, "GroupVersionKind", gvk)
 				} else {
-					if !equality.Semantic.DeepDerivative(obj, old) {
-						obj.SetResourceVersion(old.GetResourceVersion())
-						if err := r.Update(ctx, obj); err != nil {
-							reqLogger.Error(err, "Update failed", "key", key, "GroupVersionKind", gvk)
-							return ctrl.Result{}, err
-						}
-						reqLogger.Info("Object updated", "key", key, "GroupVersionKind", gvk)
-					} else {
-						reqLogger.Info("Object has not changed", "key", key, "GroupVersionKind", gvk)
-					}
+					reqLogger.Info("Object has not changed", "key", key, "GroupVersionKind", gvk)
 				}
 			}
 		}

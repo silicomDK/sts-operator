@@ -9,3 +9,22 @@
     - Using /metrics API?
 - Remotely, through gRPC, configure tsyncd
 
+Better cleanup and re-creation.
+
+Figure out what namespaces, how many possible, etc.
+
+Remove references to sts-silicom namespace in config/rbac !!! DONE.
+
+Rbac not supposed to be in assets/
+
+Github auto build and push to quay.io to master->dev, production->production
+
+Default values into sample sample. DONE... kinda, for now
+
+STS build sro remove affine... DONE
+
+Changes on nodes... OWNS() ???? Then config is applied when label is changed
+
+CRD comments on top of types fields. DONE... kinda, for now
+
+Add status stuff to STSnode status
