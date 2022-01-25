@@ -31,6 +31,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -133,6 +134,9 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		Namespace: req.NamespacedName.Namespace,
 		Name:      req.NamespacedName.Name,
 	}, stsConfig); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -165,16 +169,23 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
 
+	stsConfig.SetOwnerReferences([]metav1.OwnerReference{{
+		Kind:       operatorCfg.Kind,
+		APIVersion: operatorCfg.APIVersion,
+		Name:       operatorCfg.Name,
+		UID:        operatorCfg.UID,
+	}})
+
+	if err := r.Update(ctx, stsConfig); err != nil {
+		reqLogger.Error(err, "Update failed")
+		return ctrl.Result{}, err
+	}
+
 	ownerRefs := []metav1.OwnerReference{{
 		Kind:       stsConfig.Kind,
 		APIVersion: stsConfig.APIVersion,
 		Name:       stsConfig.Name,
 		UID:        stsConfig.UID,
-	}, {
-		Kind:       operatorCfg.Kind,
-		APIVersion: operatorCfg.APIVersion,
-		Name:       operatorCfg.Name,
-		UID:        operatorCfg.UID,
 	}}
 
 	cfgTemplate := &StsConfigTemplate{}

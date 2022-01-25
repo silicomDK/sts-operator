@@ -6,7 +6,6 @@ TODO:
     - Operator can use the GRPC to set the variables instead of restart.
 - Github auto build and push to quay.io to master->dev, production->production
 - Changes on nodes... OWNS() ???? Then config is applied when label is changed
-- When deleting stsconfig, the daemonsets are not cleaned up, only operatorconfig works.
 
 Done
 * When kubectl delete stsoperatorconfig CR, cleanup works
