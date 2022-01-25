@@ -17,23 +17,17 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"os"
-	"regexp"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -351,79 +345,98 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 }
 
 func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
-	var buff bytes.Buffer
-	var objects []client.Object
+	privileged := true
 
 	fmt.Printf("Starting plugin in ns: %s\n", operatorCfg.Namespace)
 
-	content, err := ioutil.ReadFile("/assets/sts-plugin.yaml")
-	if err != nil {
-		fmt.Println("ERROR: Loading sts-plugin.yaml file")
-		return err
+	daemonset := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sts-plugin",
+			Namespace: operatorCfg.Namespace,
+			Labels: map[string]string{
+				"app": "sts-plugin",
+			},
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind:       operatorCfg.Kind,
+				APIVersion: operatorCfg.APIVersion,
+				Name:       operatorCfg.Name,
+				UID:        operatorCfg.UID,
+			}},
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "sts-plugin",
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "sts-plugin",
+					},
+				},
+				Spec: v1.PodSpec{
+					NodeSelector: map[string]string{
+						"feature.node.kubernetes.io/custom-silicom.sts.devices": "true",
+					},
+					ServiceAccountName: "sts-plugin",
+					HostNetwork:        true,
+					Containers: []v1.Container{
+						{
+							Name:            "sts-plugin",
+							Image:           operatorCfg.Spec.Images.StsPlugin,
+							ImagePullPolicy: "Always",
+							SecurityContext: &v1.SecurityContext{
+								Privileged: &privileged,
+							},
+							Env: []v1.EnvVar{
+								{
+									Name:  "GPS_SVC_PORT",
+									Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GpsSvcPort),
+								},
+								{
+									Name:  "GRPC_SVC_PORT",
+									Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GrpcSvcPort),
+								},
+								{
+									Name: "NODE_NAME",
+									ValueFrom: &v1.EnvVarSource{
+										FieldRef: &v1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: "NAMESPACE",
+									ValueFrom: &v1.EnvVarSource{
+										FieldRef: &v1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
-	t, err := template.New("asset").Option("missingkey=error").Parse(string(content))
-	if err != nil {
-		fmt.Println("ERROR: New template")
-		return err
-	}
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: daemonset.Namespace,
+		Name:      daemonset.Name,
+	}, daemonset); err != nil {
 
-	err = t.Execute(&buff, operatorCfg)
-	if err != nil {
-		fmt.Println("ERROR: Template execute failure")
-		return err
-	}
-
-	rx := regexp.MustCompile("\n-{3}")
-	objectsDefs := rx.Split(buff.String(), -1)
-
-	ownerRefs := []metav1.OwnerReference{{
-		Kind:       operatorCfg.Kind,
-		APIVersion: operatorCfg.APIVersion,
-		Name:       operatorCfg.Name,
-		UID:        operatorCfg.UID,
-	}}
-
-	for _, objectDef := range objectsDefs {
-		obj := unstructured.Unstructured{}
-		r := strings.NewReader(objectDef)
-		decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
-		err := decoder.Decode(&obj)
+		err = r.Create(context.TODO(), daemonset)
 		if err != nil {
-			fmt.Println("ERROR: Decoding YAML failure")
-			return err
+			panic(err)
 		}
-
-		obj.SetOwnerReferences(ownerRefs)
-		objects = append(objects, &obj)
-	}
-
-	for _, obj := range objects {
-		gvk := obj.GetObjectKind().GroupVersionKind()
-		old := &unstructured.Unstructured{}
-		old.SetGroupVersionKind(gvk)
-		key := client.ObjectKeyFromObject(obj)
-
-		if err := r.Get(context.TODO(), key, old); err != nil {
-			err := r.Create(context.TODO(), obj)
-			if err != nil {
-				panic(err)
-			} else {
-				fmt.Println("Object created", "key", key, "GroupVersionKind", gvk)
-			}
-		} else {
-			if !equality.Semantic.DeepDerivative(obj, old) {
-				obj.SetResourceVersion(old.GetResourceVersion())
-				if err := r.Update(context.TODO(), obj); err != nil {
-					fmt.Println("ERROR: Update failed", "key", key, "GroupVersionKind", gvk)
-					return err
-				}
-				fmt.Println("Object updated", "key", key, "GroupVersionKind", gvk)
-			} else {
-				fmt.Println("Object has not changed", "key", key, "GroupVersionKind", gvk)
-			}
-
+	} else {
+		r.Update(context.TODO(), daemonset)
+		if err != nil {
+			panic(err)
 		}
 	}
+
 	return nil
 }

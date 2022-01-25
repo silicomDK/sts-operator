@@ -1,60 +1,8 @@
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
-rules:
-- apiGroups:
-  - sts.silicom.com
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-  - update
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  verbs:
-  - use
-  resourceNames:
-  - privileged
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: {{.StsConfig.Name}}
-subjects:
-- kind: ServiceAccount
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
-
----
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{.StsConfig.Name}}-tsync-conf
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
 data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
@@ -62,6 +10,7 @@ data:
     nicStr{{inc $i}} = {{$dev.EthName}}
     qlEnable{{inc $i}} = {{$dev.QlEnable}}
     holdOff{{inc $i}} = {{$dev.HoldOff}}
+    ql{{inc $i}} = {{$dev.Ql}}
 {{end}}
     slavePortMask = {{printf "0x%x" .SlavePortMask}}
     masterPortMask = {{printf "0x%x" .MasterPortMask}}
@@ -69,11 +18,13 @@ data:
     phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
     IPCServer = 1
     domainNum = {{.StsConfig.Spec.DomainNumber}}
-    forwardable = 0
-    twoStep = 0
-    priority2 = 128
+    forwardable = {{.StsConfig.Spec.Forwardable}}
+    twoStep = {{.StsConfig.Spec.TwoStep}}
+    priority2 = {{.StsConfig.Spec.Priority2}}
+    modePPS = {{.StsConfig.Spec.ModePPS}}
     srcPPS = {{.StsConfig.Spec.SrcPPS}}
     src10MHz = {{.StsConfig.Spec.Src10MHz}}
+    mode10MHz = {{.StsConfig.Spec.Mode10MHz}}
     synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
     syncOption = {{.StsConfig.Spec.SyncOption}}
     synceCpu = {{.StsConfig.Spec.SynceCpu}}
@@ -84,12 +35,12 @@ data:
     countDelay = 0
     dataDelay = 0
     statDelay = 0
-    aprLevel = 0
+    aprLevel = {{.StsConfig.Spec.AprLevel}}
     traceModule = 23
-    traceLevel = 0
-    tracePtpMsg = -1
-    esmcMode = 2
-    ssmMode = 1
+    traceLevel = {{.StsConfig.Spec.TraceLevel}}
+    tracePtpMsg = {{.StsConfig.Spec.TracePtpMsg}}
+    esmcMode = {{.StsConfig.Spec.EsmcMode}}
+    ssmMode = {{.StsConfig.Spec.SsmMode}}
     whenWriteLog = 0
     debugAPI = 0
 
@@ -100,7 +51,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-gpsd
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: gpsd
 spec:
@@ -119,7 +70,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-tsyncd
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: tsyncd
 spec:
@@ -139,7 +90,7 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   name: {{.StsConfig.Name}}-{{.NodeName}}-tsync
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
     openshift.io/scc: {{.StsConfig.Name}}
 spec:
@@ -160,7 +111,7 @@ spec:
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.GrpcTsyncd}}
@@ -224,7 +175,7 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
   name: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
     openshift.io/scc: {{.StsConfig.Name}}
 spec:
@@ -245,7 +196,7 @@ spec:
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
@@ -285,7 +236,7 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
   name: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
-  namespace: {{.StsOperatorConfig.Spec.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
     openshift.io/scc: {{.StsConfig.Name}}
 spec:
@@ -306,7 +257,7 @@ spec:
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}
