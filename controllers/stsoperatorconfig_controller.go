@@ -157,6 +157,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
+	ctrl.SetControllerReference(operatorCfg, svc, r.Scheme)
+
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      svc.Name,
@@ -215,6 +217,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 			},
 		},
 	}
+
+	ctrl.SetControllerReference(operatorCfg, deployment, r.Scheme)
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: deployment.Namespace,
@@ -279,6 +283,8 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		},
 	}
 
+	ctrl.SetControllerReference(operatorCfg, sr, r.Scheme)
+
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: operatorCfg.Spec.Sro.Namespace,
 		Name:      sr.Name,
@@ -324,6 +330,8 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 	workerConfig := &nfdv1.ConfigMap{}
 	workerConfig.ConfigData = string(content)
 	nfdOperand.Spec.WorkerConfig = workerConfig
+
+	ctrl.SetControllerReference(operatorCfg, nfdOperand, r.Scheme)
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: nfdOperand.Namespace,
@@ -421,6 +429,8 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 			},
 		},
 	}
+
+	ctrl.SetControllerReference(operatorCfg, daemonset, r.Scheme)
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
 		Namespace: daemonset.Namespace,
