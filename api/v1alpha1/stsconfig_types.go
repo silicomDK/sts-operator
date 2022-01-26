@@ -28,7 +28,7 @@ type StsConfigSpec struct {
 	Interfaces   []StsInterfaceSpec `json:"interfaces"`
 	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
 
-	// +kubebuilder:validation:Enum=T-GM.8275.1;T-BC-8275.1;T-TSC.8275.1
+	// +kubebuilder:validation:Enum=T-GM.8275.1;T-BC-8275.1;T-TSC.8275.1;T-GM.8275.2;T-BC-8275.2;
 	// +kubebuilder:default:="T-GM.8275.1"
 	//Telecom G8275 Profile
 	//
@@ -245,6 +245,18 @@ type StsInterfaceSpec struct {
 	// +kubebuilder:validation:Maximum=1
 	// +kubebuilder:validation:Optional
 	SyncE int `json:"synce,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
+	Ipv6 int `json:"ipv6,omitempty"`
+
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=1
+	// +kubebuilder:validation:Optional
+	Ipv4 int `json:"ipv4,omitempty"`
 
 	// +kubebuilder:default:=500
 	// +kubebuilder:validation:Minimum=300

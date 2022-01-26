@@ -30,6 +30,8 @@ spec:
       ethPort: 0
       ql: 4
       qlEnable: 1
+      ipv4: 1
+      ipv6: 1
     - ethName: enp2s0f1
       synce: 1
       holdoff: 500
@@ -37,6 +39,8 @@ spec:
       mode: Master
       ql: 4
       qlEnable: 1
+      ipv4: 1
+      ipv6: 1
     - ethName: enp2s0f2
       synce: 1
       holdoff: 500
@@ -44,3 +48,4 @@ spec:
       mode: Master
       ql: 4
       qlEnable: 1
+      ipv4: 1

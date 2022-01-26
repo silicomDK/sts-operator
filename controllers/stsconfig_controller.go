@@ -56,6 +56,8 @@ type StsConfigTemplate struct {
 	SlavePortMask     int
 	MasterPortMask    int
 	SyncePortMask     int
+	Ipv6PortMask      int
+	Ipv4PortMask      int
 	ProfileId         int
 }
 
@@ -64,10 +66,18 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 	cfg.SlavePortMask = 0
 	cfg.MasterPortMask = 0
 	cfg.SyncePortMask = 0
+	cfg.Ipv4PortMask = 0
+	cfg.Ipv6PortMask = 0
 
 	for _, x := range interfaces {
 		if x.SyncE == 1 {
 			cfg.SyncePortMask |= (1 << x.EthPort)
+		}
+		if x.Ipv6 == 1 {
+			cfg.Ipv6PortMask |= (1 << x.EthPort)
+		}
+		if x.Ipv4 == 1 {
+			cfg.Ipv4PortMask |= (1 << x.EthPort)
 		}
 
 		if x.Mode == "Master" {
@@ -192,6 +202,10 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			cfgTemplate.ProfileId = 1
 		} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
 			cfgTemplate.ProfileId = 3
+		} else if stsConfig.Spec.Mode == "T-BC.8275.2" {
+			cfgTemplate.ProfileId = 4
+		} else if stsConfig.Spec.Mode == "T-GM-8275.2" {
+			cfgTemplate.ProfileId = 5
 		}
 
 		cfgTemplate.StsConfig = stsConfig

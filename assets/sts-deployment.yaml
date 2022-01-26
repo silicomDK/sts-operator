@@ -28,6 +28,8 @@ data:
     synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
     syncOption = {{.StsConfig.Spec.SyncOption}}
     synceCpu = {{.StsConfig.Spec.SynceCpu}}
+    ipv6PortMask = {{printf "0x%x" .Ipv6PortMask}}
+    ipv4PortMask = {{printf "0x%x" .Ipv4PortMask}}
     swTimestamp = 0
     inbandMode = 1 
     dumpMode = 0

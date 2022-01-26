@@ -72,6 +72,16 @@ spec:
                       maximum: 1800
                       minimum: 300
                       type: integer
+                    ipv4:
+                      default: 0
+                      maximum: 1
+                      minimum: 0
+                      type: integer
+                    ipv6:
+                      default: 0
+                      maximum: 1
+                      minimum: 0
+                      type: integer
                     mode:
                       default: Master
                       enum:
@@ -114,6 +124,8 @@ spec:
                 - T-GM.8275.1
                 - T-BC-8275.1
                 - T-TSC.8275.1
+                - T-GM.8275.2
+                - T-BC-8275.2
                 type: string
               mode10MHz:
                 default: 2
