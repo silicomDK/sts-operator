@@ -40,6 +40,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+var (
+	ProfileIdMap = map[string]int{
+		"T-BC-8275.1":   1,
+		"T-GM.8275.1":   2,
+		"T-TSC.8275.1":  3,
+		"T-BC-P-8275.2": 4,
+		"T-GM-8275.2":   5,
+	}
+)
+
 // StsConfigReconciler reconciles a StsConfig object
 type StsConfigReconciler struct {
 	client.Client
@@ -195,17 +205,9 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		reqLogger.Info(fmt.Sprintf("Creating/Updating deamonset for node: %s:%s", node.Name, stsConfig.Spec.Mode))
 
 		cfgTemplate.EnableGPS = false
-		if stsConfig.Spec.Mode == "T-GM.8275.1" {
-			cfgTemplate.ProfileId = 2
+		cfgTemplate.ProfileId = ProfileIdMap[stsConfig.Spec.Mode]
+		if cfgTemplate.ProfileId == 2 {
 			cfgTemplate.EnableGPS = true
-		} else if stsConfig.Spec.Mode == "T-BC-8275.1" {
-			cfgTemplate.ProfileId = 1
-		} else if stsConfig.Spec.Mode == "T-TSC.8275.1" {
-			cfgTemplate.ProfileId = 3
-		} else if stsConfig.Spec.Mode == "T-BC.8275.2" {
-			cfgTemplate.ProfileId = 4
-		} else if stsConfig.Spec.Mode == "T-GM-8275.2" {
-			cfgTemplate.ProfileId = 5
 		}
 
 		cfgTemplate.StsConfig = stsConfig
