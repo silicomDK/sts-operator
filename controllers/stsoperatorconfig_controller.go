@@ -163,7 +163,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	}
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: svc.Name,
+		Namespace: svc.Namespace,
 		Name:      svc.Name,
 	}, svc); err != nil {
 
