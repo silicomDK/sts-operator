@@ -184,17 +184,23 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
+	stsConfig.SetOwnerReferences([]metav1.OwnerReference{{
+		Kind:       operatorCfg.Kind,
+		APIVersion: operatorCfg.APIVersion,
+		Name:       operatorCfg.Name,
+		UID:        operatorCfg.UID,
+	}})
+
+	if err := r.Update(ctx, stsConfig); err != nil {
+		reqLogger.Error(err, "Update failed")
+		return ctrl.Result{}, err
+	}
 
 	ownerRefs := []metav1.OwnerReference{{
 		Kind:       stsConfig.Kind,
 		APIVersion: stsConfig.APIVersion,
 		Name:       stsConfig.Name,
 		UID:        stsConfig.UID,
-	}, {
-		Kind:       operatorCfg.Kind,
-		APIVersion: operatorCfg.APIVersion,
-		Name:       operatorCfg.Name,
-		UID:        operatorCfg.UID,
 	}}
 
 	cfgTemplate := &StsConfigTemplate{}
