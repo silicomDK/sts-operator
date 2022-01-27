@@ -121,10 +121,9 @@ func (r *StsOperatorConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
-	reqLogger := r.Log.WithValues("DeploySRO")
 
 	if !operatorCfg.Spec.Sro.Build {
-		reqLogger.Info("Build of SRO CR is disabled")
+		r.Log.Info("Build of SRO CR is disabled")
 		return nil
 	}
 
@@ -305,7 +304,6 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 }
 
 func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
-	reqLogger := r.Log.WithValues("DeployNfd")
 
 	nfdOperand := &nfdv1.NodeFeatureDiscovery{
 		ObjectMeta: metav1.ObjectMeta{
@@ -324,7 +322,7 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 
 	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
 	if err != nil {
-		reqLogger.Error(err, "Loading nfd-discovery.yaml file")
+		r.Log.Error(err, "Loading nfd-discovery.yaml file")
 		return err
 	}
 
@@ -352,11 +350,7 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 }
 
 func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
-	reqLogger := r.Log.WithValues("DeployPlugin")
-
 	privileged := true
-
-	reqLogger.Info("Starting plugin in ns: ", operatorCfg.Namespace)
 
 	daemonset := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
