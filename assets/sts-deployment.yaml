@@ -59,7 +59,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: {{.StsConfig.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
   ports:
     - protocol: TCP
       port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
@@ -78,7 +78,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: {{.StsConfig.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   ports:
     - protocol: TCP
       port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
