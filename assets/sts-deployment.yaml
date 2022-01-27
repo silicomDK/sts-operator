@@ -106,7 +106,6 @@ spec:
       labels:
         app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
     spec:
-      dnsPolicy: ClusterFirstWithHostNet
       shareProcessNamespace: true
       nodeSelector:
         kubernetes.io/hostname: {{.NodeName}}
@@ -115,6 +114,7 @@ spec:
         {{ $k }}: "{{ $v }}"
 {{- end }}
       serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.GrpcTsyncd}}
@@ -200,6 +200,7 @@ spec:
         {{ $k }}: "{{ $v }}"
 {{- end }}
       serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
@@ -261,6 +262,7 @@ spec:
         {{ $k }}: "{{ $v }}"
 {{- end }}
       serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}
