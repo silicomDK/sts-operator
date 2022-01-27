@@ -241,12 +241,6 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-special-resource",
 			Namespace: operatorCfg.Spec.Sro.Namespace,
-			OwnerReferences: []metav1.OwnerReference{{
-				Kind:       operatorCfg.Kind,
-				APIVersion: operatorCfg.APIVersion,
-				Name:       operatorCfg.Name,
-				UID:        operatorCfg.UID,
-			}},
 		},
 		Spec: srov1beta1.SpecialResourceSpec{
 			Debug:        false,
