@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
@@ -156,6 +157,21 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	nodeList := &v1.NodeList{}
+	err = r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		reqLogger.Error(err, "Can't retreive NodeList")
+		return ctrl.Result{}, err
+	}
+
+	if len(nodeList.Items) == 0 {
+		reqLogger.Info("Found 0 sts nodes, requeue")
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	}
+
 	funcMap := template.FuncMap{
 		"inc": func(i int) int {
 			return i + 1
@@ -170,16 +186,6 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	t, err := template.New("asset").Funcs(funcMap).Option("missingkey=error").Parse(string(content))
 	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	nodeList := &v1.NodeList{}
-	err = r.List(ctx, nodeList, client.MatchingLabels(stsConfig.Spec.NodeSelector))
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		reqLogger.Error(err, "Can't retreive NodeList")
 		return ctrl.Result{}, err
 	}
 

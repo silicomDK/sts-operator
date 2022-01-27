@@ -28,3 +28,8 @@ Changes on nodes... OWNS() ???? Then config is applied when label is changed
 CRD comments on top of types fields. DONE... kinda, for now
 
 Add status stuff to STSnode status
+
+Plugin determines if driver is to be build or not based on node sysfs information.
+
+Use watches for controller to get label changes on nodes
+ 
