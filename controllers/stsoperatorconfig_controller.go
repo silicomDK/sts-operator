@@ -134,7 +134,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: operatorCfg.Spec.Sro.Namespace,
+			Namespace: operatorCfg.Namespace,
 			Labels: map[string]string{
 				"app": "ice-driver-src",
 			},
@@ -163,7 +163,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	}
 
 	if err := r.Get(context.TODO(), client.ObjectKey{
-		Namespace: operatorCfg.Spec.Sro.Namespace,
+		Namespace: svc.Name,
 		Name:      svc.Name,
 	}, svc); err != nil {
 
@@ -181,7 +181,7 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
-			Namespace: operatorCfg.Spec.Sro.Namespace,
+			Namespace: operatorCfg.Namespace,
 			OwnerReferences: []metav1.OwnerReference{{
 				Kind:       operatorCfg.Kind,
 				APIVersion: operatorCfg.APIVersion,
@@ -251,7 +251,10 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 				Name:    "ice-special-resource",
 				Repository: helmerv1beta1.HelmRepo{
 					Name: "ice-special-resource",
-					URL:  fmt.Sprintf("%s:%d", operatorCfg.Spec.Sro.Chart.Repository.URL, operatorCfg.Spec.Sro.SrcSvcPort),
+					URL: fmt.Sprintf("%s.%s.svc:%d",
+						operatorCfg.Spec.Sro.Chart.Repository.URL,
+						operatorCfg.Namespace,
+						operatorCfg.Spec.Sro.SrcSvcPort),
 				},
 			},
 			Set: unstructured.Unstructured{
