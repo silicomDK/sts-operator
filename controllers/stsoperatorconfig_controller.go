@@ -382,6 +382,7 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 					NodeSelector: map[string]string{
 						"feature.node.kubernetes.io/custom-silicom.sts.devices": "true",
 					},
+					DNSPolicy:          v1.DNSClusterFirstWithHostNet,
 					ServiceAccountName: "sts-plugin",
 					HostNetwork:        true,
 					Containers: []v1.Container{

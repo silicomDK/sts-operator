@@ -106,6 +106,7 @@ spec:
       labels:
         app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
       shareProcessNamespace: true
       nodeSelector:
         kubernetes.io/hostname: {{.NodeName}}
