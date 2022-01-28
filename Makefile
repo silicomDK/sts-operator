@@ -11,6 +11,7 @@ IMG_VERSION ?= $(shell git branch --show-current)
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+CHANNELS="alpha,beta"
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -20,6 +21,7 @@ endif
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
 # - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
 # - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+DEFAULT_CHANNEL="alpha"
 ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
@@ -42,6 +44,10 @@ IMG ?= $(IMAGE_TAG_BASE):$(IMG_VERSION)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
+
+COMMUNITY_OPERATORS_DIR := ~/src/community-operators-prod
+COMMUNITY_OPERATORS_VER := 0.0.2
+COMMUNITY_OPERATORS_OP  := silicom-sts-operator
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -221,3 +227,8 @@ ice.tgz:
 	tar xvf ice.tgz -C src
 
 bundle-all: generate manifests bundle bundle-build
+
+community-bundle:
+	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/sts-manager-config_v1_configmap.yaml
