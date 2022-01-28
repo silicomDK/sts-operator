@@ -2,16 +2,19 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ master,0.0.1,0.0.1-dev ]
+    branches:
+    - master
+    - 0.0.1
+    - 0.0.1-dev
   pull_request:
-    branches: [ master,0.0.1,0.0.1-dev ]
+    branches:
+    - master
+    - 0.0.1
+    - 0.0.1-dev
 
 jobs:
-
   build:
-
     runs-on: golang
-
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
