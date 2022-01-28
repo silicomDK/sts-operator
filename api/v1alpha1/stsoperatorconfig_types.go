@@ -79,7 +79,7 @@ type StsImages struct {
 	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.1.0.0"
 	GrpcTsyncd string `json:"grpcTsyncd,omitempty"`
 
-	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.1"
+	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.2"
 	StsPlugin string `json:"stsPlugin,omitempty"`
 
 	// +kubebuilder:default:string="quay.io/silicom/gpsd:3.23.1"
