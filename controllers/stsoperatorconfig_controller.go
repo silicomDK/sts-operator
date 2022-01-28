@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -62,31 +61,21 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsOperatorConfig")
 
-	// For now, only use CRs in the operators namespace
-	if req.NamespacedName.Namespace != os.Getenv("NAMESPACE") {
-		reqLogger.Info("Ignoring Operator CR")
-		return ctrl.Result{}, nil
-	}
-
-	// Fetch the StsOperatorConfig instance, we don't care about what it is
-	// named, just get the first.
-	// In case there are > 1 configs, get the list and use the first.
 	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
 
-	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
-	err := r.List(ctx, operatorCfgList, opts)
+	err := r.List(ctx, operatorCfgList, &client.ListOptions{})
 	if err != nil {
 		reqLogger.Error(err, "Failed to get operator config")
 		return ctrl.Result{}, err
 	}
 
 	if len(operatorCfgList.Items) == 0 {
-		reqLogger.Info("No Operator CR found in this namespace")
+		reqLogger.Info("No StsOperatorConfig found")
 		return ctrl.Result{}, err
 	}
 
 	if len(operatorCfgList.Items) > 1 {
-		reqLogger.Info("WARNING: There are 2 Operator CR found in this namespace, please remove 1")
+		reqLogger.Info("ERROR: There are 2 StsOperatorConfig found, please remove 1")
 		return ctrl.Result{}, err
 	}
 

@@ -132,19 +132,22 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling StsConfig")
 
-	// Fetch the StsOperatorConfig instance
 	operatorCfgList := &stsv1alpha1.StsOperatorConfigList{}
 
-	opts := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(req.NamespacedName.Namespace)})
-	err := r.List(ctx, operatorCfgList, opts)
+	err := r.List(ctx, operatorCfgList, &client.ListOptions{})
 	if err != nil {
 		reqLogger.Error(err, "Failed to get operator config")
 		return ctrl.Result{}, err
 	}
 
 	if len(operatorCfgList.Items) == 0 {
-		reqLogger.Info("No Operator CR found in this namespace")
-		return ctrl.Result{}, nil
+		reqLogger.Info("No StsOperatorConfig found")
+		return ctrl.Result{}, err
+	}
+
+	if len(operatorCfgList.Items) > 1 {
+		reqLogger.Info("ERROR: There are 2 StsOperatorConfig found, please remove 1")
+		return ctrl.Result{}, err
 	}
 
 	operatorCfg := &operatorCfgList.Items[0]

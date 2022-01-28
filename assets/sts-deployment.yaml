@@ -193,8 +193,8 @@ spec:
         app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
     spec:
       shareProcessNamespace: true
-      nodeName: {{.NodeName}}
       nodeSelector:
+        kubernetes.io/hostname: {{.NodeName}}
         sts.silicom.com/ice-driver-available: "true"
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
@@ -255,8 +255,8 @@ spec:
         app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
     spec:
       shareProcessNamespace: true
-      nodeName: {{.NodeName}}
       nodeSelector:
+        kubernetes.io/hostname: {{.NodeName}}
         sts.silicom.com/ice-driver-available: "true"
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
