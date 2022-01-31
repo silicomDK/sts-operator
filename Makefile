@@ -46,7 +46,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 ENVTEST_K8S_VERSION = 1.21
 
 COMMUNITY_OPERATORS_DIR := ~/src/community-operators-prod
-COMMUNITY_OPERATORS_VER := 0.0.2
+COMMUNITY_OPERATORS_VER := $(shell git branch --show-current)
 COMMUNITY_OPERATORS_OP  := silicom-sts-operator
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -231,4 +231,4 @@ bundle-all: generate manifests bundle bundle-build
 community-bundle:
 	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
-	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/sts-manager-config_v1_configmap.yaml
+	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
