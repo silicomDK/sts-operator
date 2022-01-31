@@ -32,4 +32,6 @@ Add status stuff to STSnode status
 Plugin determines if driver is to be build or not based on node sysfs information.
 
 Use watches for controller to get label changes on nodes
+
+Remove pullPolicy: Always to whenNotPresent or similar.
  

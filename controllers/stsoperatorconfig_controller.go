@@ -120,6 +120,14 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 		operatorCfg.Spec.Sro.Chart.Repository.URL = "http://ice-driver-src"
 	}
 
+	if len(operatorCfg.Spec.Sro.Chart.Name) < 1 {
+		operatorCfg.Spec.Sro.Chart.Name = "ice-special-resource"
+	}
+
+	if len(operatorCfg.Spec.Sro.Chart.Repository.Name) < 1 {
+		operatorCfg.Spec.Sro.Chart.Repository.Name = "ice-special-resource"
+	}
+
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ice-driver-src",
@@ -240,10 +248,10 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 			Namespace:    operatorCfg.Spec.Sro.Namespace,
 			NodeSelector: map[string]string{"feature.node.kubernetes.io/custom-intel.e810_c.devices": "true"},
 			Chart: helmerv1beta1.HelmChart{
-				Version: "0.0.1",
-				Name:    "ice-special-resource",
+				Version: operatorCfg.Spec.Sro.Chart.Version,
+				Name:    operatorCfg.Spec.Sro.Chart.Name,
 				Repository: helmerv1beta1.HelmRepo{
-					Name: "ice-special-resource",
+					Name: operatorCfg.Spec.Sro.Chart.Repository.Name,
 					URL: fmt.Sprintf("%s.%s.svc:%d",
 						operatorCfg.Spec.Sro.Chart.Repository.URL,
 						operatorCfg.Namespace,
