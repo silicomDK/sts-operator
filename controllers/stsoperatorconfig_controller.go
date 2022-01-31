@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -304,6 +305,11 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 }
 
 func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
+	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
+	if err != nil {
+		r.Log.Error(err, "Loading nfd-discovery.yaml file")
+		return err
+	}
 
 	nfdOperand := &nfdv1.NodeFeatureDiscovery{
 		ObjectMeta: metav1.ObjectMeta{
@@ -316,19 +322,15 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 				UID:        operatorCfg.UID,
 			}},
 		},
+		Spec: nfdv1.NodeFeatureDiscoverySpec{
+			Operand: nfdv1.OperandSpec{
+				Namespace: operatorCfg.Namespace,
+			},
+			WorkerConfig: &nfdv1.ConfigMap{
+				ConfigData: string(content),
+			},
+		},
 	}
-
-	nfdOperand.Spec.Operand.Namespace = operatorCfg.Namespace
-
-	content, err := ioutil.ReadFile("/assets/nfd-discovery.yaml")
-	if err != nil {
-		r.Log.Error(err, "Loading nfd-discovery.yaml file")
-		return err
-	}
-
-	workerConfig := &nfdv1.ConfigMap{}
-	workerConfig.ConfigData = string(content)
-	nfdOperand.Spec.WorkerConfig = workerConfig
 
 	ctrl.SetControllerReference(operatorCfg, nfdOperand, r.Scheme)
 
@@ -352,7 +354,6 @@ func (r *StsOperatorConfigReconciler) DeployNfd(operatorCfg *stsv1alpha1.StsOper
 }
 
 func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsOperatorConfig) error {
-	privileged := true
 
 	daemonset := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -393,7 +394,7 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 							Image:           operatorCfg.Spec.Images.StsPlugin,
 							ImagePullPolicy: "Always",
 							SecurityContext: &v1.SecurityContext{
-								Privileged: &privileged,
+								Privileged: pointer.Bool(true),
 							},
 							Env: []v1.EnvVar{
 								{
