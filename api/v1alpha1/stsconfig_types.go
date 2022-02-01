@@ -39,7 +39,7 @@ type StsConfigSpec struct {
 	// T-TSC.8275.1
 	Mode string `json:"mode,omitempty"`
 
-	// +kubebuilder:default:="openshift-operators"
+	// +kubebuilder:default:="sts-silicom"
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
