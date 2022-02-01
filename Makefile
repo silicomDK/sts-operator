@@ -6,6 +6,8 @@
 VERSION ?= $(shell git branch --show-current)
 IMG_VERSION ?= $(shell git branch --show-current)
 
+EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -157,7 +159,7 @@ endef
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS) $(EXTRA_SERVICE_ACCOUNTS)
 	operator-sdk bundle validate ./bundle
 	echo "  com.redhat.openshift.versions: v4.8" >> bundle/metadata/annotations.yaml
 

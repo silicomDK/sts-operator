@@ -11,21 +11,21 @@
 
 Better cleanup and re-creation.
 
-Figure out what namespaces, how many possible, etc.
+~~Figure out what namespaces, how many possible, etc.~~
 
-Remove references to sts-silicom namespace in config/rbac !!! DONE.
+~~Remove references to sts-silicom namespace in config/rbac !!! DONE.~~
 
-Rbac not supposed to be in assets/
+~~Rbac not supposed to be in assets/~~
 
 Github auto build and push to quay.io to master->dev, production->production
 
-Default values into sample sample. DONE... kinda, for now
+~~Default values into sample sample. DONE... kinda, for now~~
 
-STS build sro remove affine... DONE
+~~STS build sro remove affine... DONE~~
 
 Changes on nodes... OWNS() ???? Then config is applied when label is changed
 
-CRD comments on top of types fields. DONE... kinda, for now
+~~CRD comments on top of types fields. DONE... kinda, for now~~
 
 Add status stuff to STSnode status
 

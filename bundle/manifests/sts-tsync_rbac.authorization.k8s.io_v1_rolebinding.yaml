@@ -10,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: sts-tsync
-  namespace: sts-silicom
+  namespace: openshift-operators

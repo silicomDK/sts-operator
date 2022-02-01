@@ -16,5 +16,10 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
-- stsplugin_role.yaml
-- ststsync_role.yaml
+- plugin_role.yaml
+- plugin_clusterrole.yaml
+- plugin_rolebinding.yaml
+- plugin_service_account.yaml
+- tsync_role.yaml
+- tsync_rolebinding.yaml
+- tsync_service_account.yaml

@@ -3,7 +3,7 @@ kind: StsConfig
 metadata:
   name: bc-1
 spec:
-  namespace: sts-silicom
+  namespace: openshift-operators
   nodeSelector:
     sts.silicom.com/config: "bc-1"
   mode: T-TBC.8275.1

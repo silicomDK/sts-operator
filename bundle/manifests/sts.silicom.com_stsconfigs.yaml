@@ -140,7 +140,7 @@ spec:
                 minimum: 1
                 type: integer
               namespace:
-                default: sts-silicom
+                default: openshift-operators
                 type: string
               nodeSelector:
                 additionalProperties:

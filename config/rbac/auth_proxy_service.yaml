@@ -4,7 +4,6 @@ metadata:
   labels:
     control-plane: controller-manager
   name: controller-manager-metrics-service
-  namespace: sts-silicom
 spec:
   ports:
   - name: https

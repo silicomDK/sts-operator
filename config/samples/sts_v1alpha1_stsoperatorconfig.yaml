@@ -2,8 +2,9 @@ apiVersion: sts.silicom.com/v1alpha1
 kind: StsOperatorConfig
 metadata:
   name: sts-operator-config
+  namespace: openshift-operators
 spec:
-  namespace: sts-silicom
+  namespace: openshift-operators
   grpcSvcPort: 50051
   gpsSvcPort: 2947
   images:
@@ -15,8 +16,8 @@ spec:
     gpsd: quay.io/silicom/gpsd:3.23.1
   sro:
     namespace: openshift-operators
-    iceVersion: 1.7.16
-    srcImage: quay.io/silicom/ice-driver-src:1.7.16
+    iceVersion: 1.7.16.1
+    srcImage: quay.io/silicom/ice-driver-src:1.7.16.1
     srcSvcPort: 3000
     chart:
       repository:
