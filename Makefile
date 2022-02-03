@@ -13,7 +13,7 @@ EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
-CHANNELS?="alpha,beta"
+CHANNELS?="alpha"
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -193,7 +193,7 @@ endif
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
