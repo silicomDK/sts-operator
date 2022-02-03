@@ -5,7 +5,7 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.2
+    containerImage: quay.io/silicom/sts-operator:0.0.3
     createdAt: 2021-11-17T10:21:24 CET
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
@@ -14,7 +14,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/silicomdk/sts-operator
-  name: silicom-sts-operator.v0.0.2
+  name: silicom-sts-operator.v0.0.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -87,5 +87,5 @@ spec:
   provider:
     name: Silicom Ltd.
     url: http://www.silicom-usa.com
-  replaces: silicom-sts-operator.v0.0.1
-  version: 0.0.2
+  replaces: silicom-sts-operator.v0.0.2
+  version: 0.0.3
