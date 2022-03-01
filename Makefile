@@ -108,7 +108,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go --zap-devel
 
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build --build-arg STS_VERSION=$(VERSION) -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
@@ -154,6 +154,10 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
+
+operator-sdk:
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.16.0/operator-sdk_linux_amd64 -o bin/operator-sdk
+	chmod +x bin/operator-sdk
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
@@ -213,20 +217,10 @@ catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 plugin:
-	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) --build-arg GRPC_TSYNC=quay.io/silicom/grpc-tsyncd:2.1.0.0 -f Dockerfile.plugin
+	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=quay.io/silicom/grpc-tsyncd:2.1.0.0 -f Dockerfile.plugin
 
 plugin-push:
 	docker push quay.io/silicom/sts-plugin:$(IMG_VERSION)
-
-s2i: ice.tgz
-	curl -sL https://github.com/openshift/source-to-image/releases/download/v1.3.1/source-to-image-v1.3.1-a5a77147-linux-amd64.tar.gz -o s2i.tar.gz
-	tar xvf s2i.tar.gz -C bin
-	rm s2i.tar.gz
-
-ice.tgz:
-	- mkdir src
-	curl -sL "https://sourceforge.net/projects/e1000/files/ice%20stable/1.6.4/ice-1.6.4.tar.gz/download" -o ice.tgz
-	tar xvf ice.tgz -C src
 
 bundle-all: generate manifests bundle bundle-build
 

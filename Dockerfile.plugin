@@ -30,8 +30,18 @@ COPY sts-plugin/main.go main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o sts-plugin main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
-RUN microdnf install pciutils iproute
+RUN microdnf install pciutils iproute \
+    && microdnf update
 
 COPY --from=1 /workspace/sts-plugin /
+
+ARG STS_VERSION
+### Required OpenShift Labels
+LABEL name="sts-plugin" \
+      maintainer="rmr@silicom.dk" \
+      vendor="Silicom" \
+      version="$STS_VERSION" \
+      summary="Provides node level sts support" \
+      description="Application to query and maintain sts cards"
 
 ENTRYPOINT ["/sts-plugin"]

@@ -147,7 +147,7 @@ func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
 	if err != nil {
 		fmt.Printf("could not get time: %v\n", err)
 	} else {
-		stsNode.Status.TsyncStatus.Time = timeReply.GetMessage()
+		stsNode.Status.TsyncStatus.Time = timeReply.GetTsTime()
 
 	}
 	cancel()

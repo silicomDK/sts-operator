@@ -147,7 +147,6 @@ func (r *StsOperatorConfigReconciler) DeploySro(operatorCfg *stsv1alpha1.StsOper
 			}},
 		},
 		Spec: v1.ServiceSpec{
-			Type:     "NodePort",
 			Selector: map[string]string{"app": "ice-driver-src"},
 			Ports: []v1.ServicePort{
 				{
@@ -388,6 +387,14 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 					DNSPolicy:          v1.DNSClusterFirstWithHostNet,
 					ServiceAccountName: "sts-plugin",
 					HostNetwork:        true,
+					Volumes: []v1.Volume{{
+						Name: "devfs",
+						VolumeSource: v1.VolumeSource{
+							HostPath: &v1.HostPathVolumeSource{
+								Path: "/dev",
+							},
+						}},
+					},
 					Containers: []v1.Container{
 						{
 							Name:            "sts-plugin",
@@ -396,6 +403,10 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 							SecurityContext: &v1.SecurityContext{
 								Privileged: pointer.Bool(true),
 							},
+							VolumeMounts: []v1.VolumeMount{{
+								Name:      "devfs",
+								MountPath: "/dev",
+							}},
 							Env: []v1.EnvVar{
 								{
 									Name:  "GPS_SVC_PORT",
