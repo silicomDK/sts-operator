@@ -20,12 +20,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig"
 	"github.com/go-logr/logr"
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -175,22 +176,14 @@ func (r *StsConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
-	funcMap := template.FuncMap{
-		"inc": func(i int) int {
-			return i + 1
-		},
-	}
-
 	content, err := ioutil.ReadFile("/assets/sts-deployment.yaml")
 	if err != nil {
 		reqLogger.Error(err, "Loading sts-deployment.yaml file")
 		return ctrl.Result{}, err
 	}
 
-	t, err := template.New("asset").Funcs(funcMap).Option("missingkey=error").Parse(string(content))
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	// Get the Sprig function map.
+	t := template.Must(template.New("asset").Funcs(sprig.TxtFuncMap()).Parse(string(content)))
 
 	reqLogger.Info(fmt.Sprintf("Found %d sts nodes", len(nodeList.Items)))
 	stsConfig.SetOwnerReferences([]metav1.OwnerReference{{
