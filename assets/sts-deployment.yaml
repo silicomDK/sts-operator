@@ -6,18 +6,35 @@ metadata:
 data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
-{{ range $i, $dev := .StsConfig.Spec.Interfaces }}
-    nicStr{{add1 $i}} = {{$dev.EthName}}
-    qlEnable{{add1 $i}} = {{$dev.QlEnable}}
-    holdOff{{add1 $i}} = {{$dev.HoldOff}}
-    ql{{add1 $i}} = {{$dev.Ql}}
+
+{{- range $i, $dev := .StsConfig.Spec.Interfaces }}
+    port{{add1 $i}} = {{$dev.EthName}}
+    ql{{add1 $i}} = {{$dev.QlEnable}}
 {{end}}
-    slavePortMask = {{printf "0x%x" .SlavePortMask}}
-    masterPortMask = {{printf "0x%x" .MasterPortMask}}
-    syncePortMask = {{printf "0x%x" .SyncePortMask}}
+
+    synceHoldOff = {{.StsConfig.Spec.SynceHoldOff}}
+
+{{- if or (eq .ProfileId 2) (eq .ProfileId 5) }}
+    masterPortMask_GM = {{printf "0x%x" .MasterPortMask}}
+    syncePortMask_GM = {{printf "0x%x" .SyncePortMask}}
+{{end}}
+
+{{- if or (eq .ProfileId 3) (eq .ProfileId 6) (eq .ProfileId 8) }}
+    masterPortMask_BC = {{printf "0x%x" .MasterPortMask}}
+    slavePortMask_BC = {{printf "0x%x" .SlavePortMask}}
+    syncePortMask_BC = {{printf "0x%x" .SyncePortMask}}
+{{end}}
+
+{{- if or (eq .ProfileId 4) (eq .ProfileId 7) (eq .ProfileId 9) }}
+    slavePortMask_TSC = {{printf "0x%x" .SlavePortMask}}
+{{end}}
+
     phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
-    IPCServer = 1
-    domainNum = {{.StsConfig.Spec.DomainNumber}}
+
+    domainNum_8275_1 = {{ .StsConfig.Spec.DomainNum_8275_1 }}
+    domainNum_8275_2 = {{ .StsConfig.Spec.DomainNum_8275_2 }}
+    domainNum_8265_2 = {{ .StsConfig.Spec.DomainNum_8265_2 }}
+
     forwardable = {{.StsConfig.Spec.Forwardable}}
     twoStep = {{.StsConfig.Spec.TwoStep}}
     priority2 = {{.StsConfig.Spec.Priority2}}
@@ -28,8 +45,10 @@ data:
     synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
     syncOption = {{.StsConfig.Spec.SyncOption}}
     synceCpu = {{.StsConfig.Spec.SynceCpu}}
+
+{{- if or (eq .ProfileId 5) (eq .ProfileId 6) (eq .ProfileId 7) (eq .ProfileId 8) (eq .ProfileId 9) }}
     ipv6PortMask = {{printf "0x%x" .Ipv6PortMask}}
-    ipv4PortMask = {{printf "0x%x" .Ipv4PortMask}}
+{{end}}
     swTimestamp = 0
     inbandMode = 1 
     dumpMode = 0
@@ -45,6 +64,52 @@ data:
     ssmMode = {{.StsConfig.Spec.SsmMode}}
     whenWriteLog = 0
     debugAPI = 0
+    gnssSigGpsEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsEn}}
+    gnssSigGpsL1CAEn = {{.StsConfig.Spec.GnssSpec.GigGpsL1CAEn}}
+    gnssSigGpsL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL2CEn}}
+    gnssSigSBASEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASEn}}
+    gnssSigSBASL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASL1CAEn}}
+    gnssSigGalEn = {{.StsConfig.Spec.GnssSpec.GnssSigGalEn}}
+    gnssSigGalE1En = {{.StsConfig.Spec.GnssSpec.GnssSigGalE1En}}
+    gnssSigGalE5BEn = {{.StsConfig.Spec.GnssSpec.GnssSigGalE5BEn}}
+    gnssSigBDSEn = {{.StsConfig.Spec.GnssSpec.GnssSigBDSEn}}
+    gnssSigBDSB1En = {{.StsConfig.Spec.GnssSpec.GnssSigBDSB1En}}
+    gnssSigBDSB2En = {{.StsConfig.Spec.GnssSpec.GnssSigBDSB2En}}
+    gnssSigQZSSEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSEn}}
+    gnssSigQZSSL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL1CAEn}}
+    gnssSigQZSSL1SEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL1SEn}}
+    gnssSigQZSSL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL2CEn}}
+    gnssSigGLOEn = {{.StsConfig.Spec.GnssSpec.GnssSigGLOEn}}
+    gnssSigGLOL1En = {{.StsConfig.Spec.GnssSpec.GnssSigGLOL1En}}
+    gnssSigGLOL2En = {{.StsConfig.Spec.GnssSpec.GnssSigGLOL2En}}
+    gnssCableDelay = {{.StsConfig.Spec.GnssSpec.GnssCableDelay}}
+    gnssPulseDef = {{.StsConfig.Spec.GnssSpec.GnssPulseDef}}
+    gnssPulseLenDef = {{.StsConfig.Spec.GnssSpec.GnssPulseLenDef}}
+    gnssTP1En = {{.StsConfig.Spec.GnssSpec.GnssTP1En}}
+    gnssFreqTP1 = {{.StsConfig.Spec.GnssSpec.GnssFreqTP1}}
+    gnssFreqLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssFreqLockTP1}}
+    gnssUseLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssUseLockTP1}}
+    gnssDutyTP1 = {{.StsConfig.Spec.GnssSpec.GnssDutyTP1}}
+    gnssDutyLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssDutyLockTP1}}
+    gnssTP2En = {{.StsConfig.Spec.GnssSpec.GnssTP2En}}
+    gnssFreqTP2 = {{.StsConfig.Spec.GnssSpec.GnssFreqTP2}}
+    gnssFreqLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssFreqLockTP2}}
+    gnssUseLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssUseLockTP2}}
+    gnssDutyTP2 = {{.StsConfig.Spec.GnssSpec.GnssDutyTP2}}
+    gnssDutyLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssDutyLockTP2}}
+    gnssMinElev = {{.StsConfig.Spec.GnssSpec.GnssMinElev}}
+    gnssMinSatSig = {{.StsConfig.Spec.GnssSpec.GnssMinSatSig}}
+    gnssMsgNmeaUsb = {{.StsConfig.Spec.GnssSpec.GnssMsgNmeaUsb}}
+    gnssMsgUbxUsb = {{.StsConfig.Spec.GnssSpec.GnssMsgUbxUsb}}
+    gnssIntfDetect = {{.StsConfig.Spec.GnssSpec.GnssIntfDetect}}
+    gnssAntSet = {{.StsConfig.Spec.GnssSpec.GnssAntSet}}
+    gnssRecvTMode = {{.StsConfig.Spec.GnssSpec.GnssRecvTMode}}
+    gnssSvinMinDur = {{.StsConfig.Spec.GnssSpec.GnssSvinMinDur}}
+    gnssSvinAccLimit = {{.StsConfig.Spec.GnssSpec.GnssSvinAccLimit}}
+    gnssLockMode = {{.StsConfig.Spec.GnssSpec.GnssLockMode}}
+    gnssLockTh = {{.StsConfig.Spec.GnssSpec.GnssLockTh}}
+    gnssClockOutEn = {{.StsConfig.Spec.GnssSpec.GnssClockOutEn}}
+
 
 ---
 
