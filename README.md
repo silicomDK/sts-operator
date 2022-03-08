@@ -16,6 +16,11 @@
 - [StsConfig](#stsconfig)
 - [Quick Start](#quick-start)
 
+## Links
+- [Is your app air gap friendly?](https://cloud.redhat.com/blog/is-your-operator-air-gap-friendly)
+- [Building air gap friendly](https://cloud.redhat.com/blog/building-an-air-gap-friendly-operator)
+- [Operators in restricted networks](https://docs.openshift.com/container-platform/4.9/operators/operator_sdk/osdk-generating-csvs.html#olm-enabling-operator-for-restricted-network_osdk-generating-csvs)
+
 ## STS Operator
 Sts Operator, runs in `sts-silicom` namespace, manages cluster wide STS configurations. It offers `StsConfig` and `StsOperatorConfig` CRDs and creates `tsyncd` to apply node specific STS config.
 

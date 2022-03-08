@@ -10,6 +10,7 @@ metadata:
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
       for Kubernetes.
+    operators.openshift.io/infrastructure-features: '["Disconnected"]'
     operators.operatorframework.io.bundle.channels.v1: alpha
     operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -87,5 +88,18 @@ spec:
   provider:
     name: Silicom Ltd.
     url: http://www.silicom-usa.com
+  relatedImages:
+  - image: quay.io/silicom/sts-plugin@sha256:d134a9865524c29fcf75bbc4469013bc38d8a15cb5f41acfddb6b9e492f556e4
+    name: sts-plugin
+  - image: quay.io/silicom/tsyncd@sha256:27226a921cad027e15c9ae2a0e7d11527cb36ff944c376f1b6dff8d0840b2a2b
+    name: tsyncd
+  - image: quay.io/silicom/phc2sys@sha256:2e15e950566b4a382747255b90d95385de467b0345650d60f6b81953b48d4519
+    name: phc2sys
+  - image: quay.io/silicom/grpc-tsyncd@sha256:ffb9920220c9ffdcd0d3fc46d7c3835dc52dadafb86d954ceb901f80f87e109b
+    name: grpc-tsync
+  - image: quay.io/silicom/tsync_extts@sha256:b3c0e0702561f0f5502dcbf96d6532ac97a5c88c1d2eb270589a688ff75771d6
+    name: tsync_extts
+  - image: quay.io/silicom/gpsd@sha256:2f28ff977ce004eaf5f37e2b2ad88d8327b8b0ce3f69d5038c3393da3da67405
+    name: gpsd
   replaces: silicom-sts-operator.v0.0.3
   version: 0.0.4

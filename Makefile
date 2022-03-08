@@ -34,7 +34,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # quay.io/silicom/operator-bundle:$VERSION and quay.io/silicom/operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= quay.io/silicom/sts-operator
+IMAGE_REGISTRY ?= quay.io/silicom
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY)/sts-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -228,3 +229,12 @@ community-bundle:
 	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
+
+update-csv:
+	@echo quay.io/silicom/sts-plugin@$(shell skopeo inspect docker://quay.io/silicom/sts-plugin:$(VERSION) --format '{{ .Digest }}')
+	@echo quay.io/silicom/tsyncd@$(shell skopeo inspect docker://quay.io/silicom/tsyncd:2.1.0.0  --format '{{ .Digest }}')
+	@echo quay.io/silicom/gpsd@$(shell skopeo inspect docker://quay.io/silicom/gpsd:3.23.1 --format '{{ .Digest }}')
+	@echo quay.io/silicom/grpc-tsyncd@$(shell skopeo inspect docker://quay.io/silicom/grpc-tsyncd:2.1.0.0 --format '{{ .Digest }}')
+	@echo quay.io/silicom/tsync_extts@$(shell skopeo inspect docker://quay.io/silicom/tsync_extts:1.0.0 --format '{{ .Digest }}')
+	@echo quay.io/silicom/phc2sys@$(shell skopeo inspect docker://quay.io/silicom/phc2sys:3.1.1 --format '{{ .Digest }}')
+	@echo quay.io/silicom/ice-driver-src@$(shell skopeo inspect docker://quay.io/silicom/ice-driver-src:1.7.16.1 --format '{{ .Digest }}')
