@@ -9,7 +9,7 @@ data:
 
 {{- range $i, $dev := .StsConfig.Spec.Interfaces }}
     port{{add1 $i}} = {{$dev.EthName}}
-    ql{{add1 $i}} = {{$dev.QlEnable}}
+    ql{{add1 $i}} = {{$dev.Ql}}
 {{end}}
 
     synceHoldOff = {{.StsConfig.Spec.SynceHoldOff}}
@@ -65,7 +65,7 @@ data:
     whenWriteLog = 0
     debugAPI = 0
     gnssSigGpsEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsEn}}
-    gnssSigGpsL1CAEn = {{.StsConfig.Spec.GnssSpec.GigGpsL1CAEn}}
+    gnssSigGpsL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL1CAEn}}
     gnssSigGpsL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL2CEn}}
     gnssSigSBASEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASEn}}
     gnssSigSBASL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASL1CAEn}}
