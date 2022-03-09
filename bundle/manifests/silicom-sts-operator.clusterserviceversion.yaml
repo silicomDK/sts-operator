@@ -220,6 +220,9 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.15.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/silicomdk/sts-operator
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/os.linux: supported
   name: silicom-sts-operator.v0.0.4
   namespace: placeholder
 spec:
