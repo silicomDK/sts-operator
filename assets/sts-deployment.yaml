@@ -65,6 +65,7 @@ data:
     ssmMode = {{.StsConfig.Spec.SsmMode}}
     whenWriteLog = 0
     debugAPI = 0
+    IPCServer = 1
     gnssSigGpsEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsEn}}
     gnssSigGpsL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL1CAEn}}
     gnssSigGpsL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL2CEn}}
