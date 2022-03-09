@@ -571,7 +571,6 @@ spec:
                 minimum: 0
                 type: integer
             required:
-            - gnssSpec
             - interfaces
             type: object
           status:

@@ -657,7 +657,7 @@ type StsGnssSpec struct {
 type StsConfigSpec struct {
 	Interfaces   []StsInterfaceSpec `json:"interfaces"`
 	NodeSelector map[string]string  `json:"nodeSelector,omitempty"`
-	GnssSpec     StsGnssSpec        `json:"gnssSpec"`
+	GnssSpec     StsGnssSpec        `json:"gnssSpec,omitempty"`
 
 	// +kubebuilder:validation:Enum=T-GM.8275.1;T-BC-8275.1;T-TSC.8275.1;T-GM.8275.2;T-BC-P-8275.2;
 	// +kubebuilder:default:="T-GM.8275.1"

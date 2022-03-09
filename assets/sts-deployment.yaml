@@ -27,6 +27,7 @@ data:
 
 {{- if or (eq .ProfileId 4) (eq .ProfileId 7) (eq .ProfileId 9) }}
     slavePortMask_TSC = {{printf "0x%x" .SlavePortMask}}
+    syncePortMask_TSC = {{printf "0x%x" .SyncePortMask}}
 {{end}}
 
     phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
