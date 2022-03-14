@@ -5,7 +5,7 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.4
+    containerImage: quay.io/silicom/sts-operator:0.0.5
     createdAt: 2021-11-17T10:21:24 CET
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
@@ -18,7 +18,7 @@ metadata:
   labels:
     operatorframework.io/arch.amd64: supported
     operatorframework.io/os.linux: supported
-  name: silicom-sts-operator.v0.0.4
+  name: silicom-sts-operator.v0.0.5
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -104,5 +104,5 @@ spec:
     name: tsync_extts
   - image: quay.io/silicom/gpsd@sha256:2f28ff977ce004eaf5f37e2b2ad88d8327b8b0ce3f69d5038c3393da3da67405
     name: gpsd
-  replaces: silicom-sts-operator.v0.0.3
-  version: 0.0.4
+  replaces: silicom-sts-operator.v0.0.4
+  version: 0.0.5

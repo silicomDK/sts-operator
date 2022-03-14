@@ -674,13 +674,6 @@ type StsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
-	// +kubebuilder:default:=24
-	// +kubebuilder:validation:Minimum=24
-	// +kubebuilder:validation:Maximum=48
-	// +kubebuilder:validation:Optional
-	// PTP domain number
-	DomainNumber int `json:"domainNumber,omitempty"`
-
 	// +kubebuilder:default:=2
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=2

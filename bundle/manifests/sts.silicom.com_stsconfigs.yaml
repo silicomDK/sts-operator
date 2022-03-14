@@ -54,12 +54,6 @@ spec:
                 maximum: 63
                 minimum: 44
                 type: integer
-              domainNumber:
-                default: 24
-                description: PTP domain number
-                maximum: 48
-                minimum: 24
-                type: integer
               esmcMode:
                 default: 2
                 description: "Configures the ESMC Mode \n 1 - Manual \n 2 - Auto (default)"

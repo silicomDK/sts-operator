@@ -45,13 +45,24 @@ metadata:
   namespace: sts-silicom
 spec:
   images:
-    tsyncd: quay.io/silicom/tsyncd:2.0.1.0
+    tsyncd: quay.io/silicom/tsyncd:2.1.0.0
     ts2Phcs: quay.io/silicom/ts2phcs:1.0.0
     phcs2Sys: quay.io/silicom/phcs2sys:3.1.1
-    grpcTsyncd: quay.io/silicom/grpc-tsyncd:2.0.1.0
+    grpcTsyncd: quay.io/silicom/grpc-tsyncd:2.1.0.0
     gpsd: quay.io/silicom/gpsd:3.23.1
   grpcSvcPort: 50051
   gpsSvcPort: 2947
+  sro:
+    namespace: openshift-operators
+    iceVersion: 1.7.16.1
+    srcImage: quay.io/silicom/ice-driver-src:1.7.16.1
+    srcSvcPort: 3000
+    chart:
+      repository:
+        url: http://ice-driver-src
+        name: ice-special-resource
+      name: ice-special-resource
+      version: 0.0.1
 
 ```
 
