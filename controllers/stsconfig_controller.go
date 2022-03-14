@@ -44,10 +44,10 @@ import (
 
 var (
 	ProfileIdMap = map[string]int{
-		"T-BC-8275.1":   1,
+		"T-BC-8275.1":   3,
 		"T-GM.8275.1":   2,
-		"T-TSC.8275.1":  3,
-		"T-BC-P-8275.2": 4,
+		"T-TSC.8275.1":  4,
+		"T-BC-P-8275.2": 6,
 		"T-GM-8275.2":   5,
 	}
 )
