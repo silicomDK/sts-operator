@@ -95,7 +95,7 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 		if x.Mode == "Master" {
 			cfg.MasterPortMask |= (1 << x.EthPort)
 		} else if x.Mode == "Slave" {
-			cfg.MasterPortMask |= (1 << x.EthPort)
+			cfg.SlavePortMask |= (1 << x.EthPort)
 		}
 	}
 }
