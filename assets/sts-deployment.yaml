@@ -8,8 +8,8 @@ data:
     profileID = {{.ProfileId}}
 
 {{- range $i, $dev := .StsConfig.Spec.Interfaces }}
-    port{{add1 $i}} = {{$dev.EthName}}
-    ql{{add1 $i}} = {{$dev.Ql}}
+    port{{$dev.EthPort}} = {{$dev.EthName}}
+    ql{{$dev.EthPort}} = {{$dev.Ql}}
 {{end}}
 
     synceHoldOff = {{.StsConfig.Spec.SynceHoldOff}}
