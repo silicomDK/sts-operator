@@ -44,10 +44,10 @@ import (
 
 var (
 	ProfileIdMap = map[string]int{
-		"T-BC-8275.1":   1,
+		"T-BC-8275.1":   3,
 		"T-GM.8275.1":   2,
-		"T-TSC.8275.1":  3,
-		"T-BC-P-8275.2": 4,
+		"T-TSC.8275.1":  4,
+		"T-BC-P-8275.2": 6,
 		"T-GM-8275.2":   5,
 	}
 )
@@ -83,19 +83,19 @@ func (r *StsConfigReconciler) interfacesToBitmask(cfg *StsConfigTemplate, interf
 
 	for _, x := range interfaces {
 		if x.SyncE == 1 {
-			cfg.SyncePortMask |= (1 << x.EthPort)
+			cfg.SyncePortMask |= (1 << (x.EthPort-1))
 		}
 		if x.Ipv6 == 1 {
-			cfg.Ipv6PortMask |= (1 << x.EthPort)
+			cfg.Ipv6PortMask |= (1 << (x.EthPort-1))
 		}
 		if x.Ipv4 == 1 {
-			cfg.Ipv4PortMask |= (1 << x.EthPort)
+			cfg.Ipv4PortMask |= (1 << (x.EthPort-1))
 		}
 
 		if x.Mode == "Master" {
-			cfg.MasterPortMask |= (1 << x.EthPort)
+			cfg.MasterPortMask |= (1 << (x.EthPort-1))
 		} else if x.Mode == "Slave" {
-			cfg.MasterPortMask |= (1 << x.EthPort)
+			cfg.SlavePortMask |= (1 << (x.EthPort-1))
 		}
 	}
 }
