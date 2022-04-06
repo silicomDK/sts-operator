@@ -8,8 +8,7 @@ metadata:
           "apiVersion": "sts.silicom.com/v1alpha1",
           "kind": "StsConfig",
           "metadata": {
-            "name": "gm-1",
-            "namespace": "openshift-operators"
+            "name": "gm-1"
           },
           "spec": {
             "interfaces": [
@@ -29,7 +28,6 @@ metadata:
               }
             ],
             "mode": "T-GM.8275.1",
-            "namespace": "openshift-operators",
             "nodeSelector": {
               "sts.silicom.com/config": "gm-1"
             }
@@ -83,7 +81,6 @@ metadata:
             "mode": "T-TBC.8275.1",
             "mode10MHz": 2,
             "modePPS": 2,
-            "namespace": "openshift-operators",
             "nodeSelector": {
               "sts.silicom.com/config": "bc-1"
             },
@@ -175,8 +172,7 @@ metadata:
           "apiVersion": "sts.silicom.com/v1alpha1",
           "kind": "StsOperatorConfig",
           "metadata": {
-            "name": "sts-operator-config",
-            "namespace": "openshift-operators"
+            "name": "sts-operator-config"
           },
           "spec": {
             "gpsSvcPort": 2947,
@@ -189,7 +185,6 @@ metadata:
               "ts2Phcs": "quay.io/silicom/ts2phcs:1.0.0",
               "tsyncd": "quay.io/silicom/tsyncd:2.1.0.0"
             },
-            "namespace": "openshift-operators",
             "sro": {
               "chart": {
                 "name": "ice-special-resource",
@@ -200,7 +195,6 @@ metadata:
                 "version": "0.0.1"
               },
               "iceVersion": "1.7.16.1",
-              "namespace": "openshift-operators",
               "srcImage": "quay.io/silicom/ice-driver-src:1.7.16.1",
               "srcSvcPort": 3000
             }
@@ -210,8 +204,6 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.4
-    createdAt: 2021-11-17T10:21:24 CET
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
       for Kubernetes.
@@ -601,9 +593,9 @@ spec:
         serviceAccountName: sts-tsync
     strategy: deployment
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
