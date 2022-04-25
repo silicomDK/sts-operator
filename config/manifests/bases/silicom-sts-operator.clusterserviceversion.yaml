@@ -102,7 +102,7 @@ spec:
     name: grpc-tsync
   - image: quay.io/silicom/tsync_extts@sha256:30dd6b493896a219ff7464813a9347595a3239ec31a6e30103cef1446c606971
     name: tsync_extts
-  - image: quay.io/silicom/sts-plugin@sha256:d134a9865524c29fcf75bbc4469013bc38d8a15cb5f41acfddb6b9e492f556e4
+  - image: quay.io/silicom/sts-plugin@sha256:sha256:9b3548764563ba6ee55b4f4a589b8dbf84f6c390a6ccd67f1a2827644bb6f637
     name: sts-plugin
   replaces: silicom-sts-operator.v0.0.4
   version: 0.0.5
