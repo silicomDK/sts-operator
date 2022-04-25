@@ -58,7 +58,7 @@ data:
     dataDelay = 0
     statDelay = 0
     aprLevel = {{.StsConfig.Spec.AprLevel}}
-    traceModule = 23
+    traceModule = {{.StsConfig.Spec.TraceModule}}
     traceLevel = {{.StsConfig.Spec.TraceLevel}}
     tracePtpMsg = {{.StsConfig.Spec.TracePtpMsg}}
     esmcMode = {{.StsConfig.Spec.EsmcMode}}

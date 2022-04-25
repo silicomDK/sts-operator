@@ -218,7 +218,7 @@ catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 plugin:
-	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=quay.io/silicom/grpc-tsyncd:2.1.0.0 -f Dockerfile.plugin
+	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=quay.io/silicom/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
 
 plugin-push:
 	docker push quay.io/silicom/sts-plugin:$(IMG_VERSION)

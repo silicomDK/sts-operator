@@ -396,6 +396,8 @@ spec:
                     ethName:
                       type: string
                     ethPort:
+                      description: This is 1 based
+                      minimum: 1
                       type: integer
                     holdoff:
                       default: 500
@@ -443,7 +445,6 @@ spec:
                       type: integer
                   required:
                   - ethName
-                  - ethPort
                   type: object
                 type: array
               mode:
@@ -543,6 +544,25 @@ spec:
               traceLevel:
                 default: 0
                 maximum: 8
+                minimum: 0
+                type: integer
+              traceModule:
+                default: 23
+                description: "Trace module \n Valid range 0-36 \n 0 - Read/Write \n
+                  1 - Init \n 2 - Lan \n 3 - Lan Stats \n 4 - Device specific interrupt
+                  \n 5 - System interrupt \n 6 - TS Engine interrupt \n 7 - Packet
+                  interrupt \n 8 - PLL interrupt \n 9 - Signal Handler \n 10 - TS
+                  Packet Stream interrupt \n 11 - Transport Layer interrupt \n 12
+                  - PTP Timestamp interrupt \n 13 - Packet Schedule interrupt \n 14
+                  - Main PTP Engine \n 15 - PTP Best-Master-Clock related \n 16 -
+                  PTP Unicast Negotiation related \n 17 - PTP Unicast Discovery related
+                  \n 18 - PTP Clock, Port or Stream State related \n 19 - TS RECORD
+                  MGR \n 20 - Socket Layer \n 21 - Clock Switch \n 22 - DCO MGR \n
+                  23 - Track Packet Process (default) \n 24 - TOD Manager \n 25 -
+                  TSIF \n 26 - MSGQ \n 27 - FPE \n 28 - PTP Foreign Master Table \n
+                  29 - PTSF \n 30 - Notify \n 31 - Signal Pipe Handler \n 32 - G781
+                  \n 33 - PTP Timer \n 34 - PTP Tlv \n 35 - HO Utils \n 36 - TSA"
+                maximum: 36
                 minimum: 0
                 type: integer
               tracePtpMsg:

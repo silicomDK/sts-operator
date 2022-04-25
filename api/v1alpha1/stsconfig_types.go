@@ -825,6 +825,89 @@ type StsConfigSpec struct {
 	//10 - Enable Trace for MANAGEMENT Messages
 	TracePtpMsg int `json:"tracePtpMsg,omitempty"`
 
+	// +kubebuilder:default:=23
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=36
+	// +kubebuilder:validation:Optional
+	//Trace module
+	//
+	//Valid range 0-36
+	//
+	//0 - Read/Write
+	//
+	//1 - Init
+	//
+	//2 - Lan
+	//
+	//3 - Lan Stats
+	//
+	//4 - Device specific interrupt
+	//
+	//5 - System interrupt
+	//
+	//6 - TS Engine interrupt
+	//
+	//7 - Packet interrupt
+	//
+	// 8 - PLL interrupt
+	//
+	// 9 - Signal Handler
+	//
+	//10 - TS Packet Stream interrupt
+	//
+	//11 - Transport Layer interrupt
+	//
+	//12 - PTP Timestamp interrupt
+	//
+	//13 - Packet Schedule interrupt
+	//
+	//14 - Main PTP Engine
+	//
+	//15 - PTP Best-Master-Clock related
+	//
+	//16 - PTP Unicast Negotiation related
+	//
+	//17 - PTP Unicast Discovery related
+	//
+	//18 - PTP Clock, Port or Stream State related
+	//
+	//19 - TS RECORD MGR
+	//
+	//20 - Socket Layer
+	//
+	//21 - Clock Switch
+	//
+	//22 - DCO MGR
+	//
+	//23 - Track Packet Process (default)
+	//
+	//24 - TOD Manager
+	//
+	//25 - TSIF
+	//
+	//26 - MSGQ
+	//
+	//27 - FPE
+	//
+	//28 - PTP Foreign Master Table
+	//
+	//29 - PTSF
+	//
+	//30 - Notify
+	//
+	//31 - Signal Pipe Handler
+	//
+	//32 - G781
+	//
+	//33 - PTP Timer
+	//
+	//34 - PTP Tlv
+	//
+	//35 - HO Utils
+	//
+	//36 - TSA
+	TraceModule int `json:"traceModule,omitempty"`
+
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=8
@@ -886,7 +969,11 @@ type StsConfigSpec struct {
 
 type StsInterfaceSpec struct {
 	EthName string `json:"ethName"`
-	EthPort int    `json:"ethPort"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Optional
+	// This is 1 based
+	EthPort int `json:"ethPort"`
 
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum=0
