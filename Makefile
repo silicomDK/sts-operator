@@ -8,6 +8,8 @@ IMG_VERSION ?= $(shell git branch --show-current)
 
 EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
 
+TSYNC_VERSION := 2.1.1.1
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -51,6 +53,8 @@ ENVTEST_K8S_VERSION = 1.21
 COMMUNITY_OPERATORS_DIR := ~/src/community-operators-prod
 COMMUNITY_OPERATORS_VER := $(shell git branch --show-current)
 COMMUNITY_OPERATORS_OP  := silicom-sts-operator
+
+MARKETPLACE_DIR         := ~/src/redhat-marketplace-operators
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -165,8 +169,8 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	bin/operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | bin/operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS) $(EXTRA_SERVICE_ACCOUNTS)
-	bin/operator-sdk bundle validate ./bundle
 	echo "  com.redhat.openshift.versions: v4.8" >> bundle/metadata/annotations.yaml
+	bin/operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
@@ -230,11 +234,16 @@ community-bundle:
 	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
 
+marketplace-bundle:
+	cp bundle.Dockerfile  $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	cp -av bundle/* $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	rm $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
+
 update-csv:
 	@echo quay.io/silicom/sts-plugin@$(shell skopeo inspect docker://quay.io/silicom/sts-plugin:$(VERSION) --format '{{ .Digest }}')
-	@echo quay.io/silicom/tsyncd@$(shell skopeo inspect docker://quay.io/silicom/tsyncd:2.1.0.0  --format '{{ .Digest }}')
+	@echo quay.io/silicom/tsyncd@$(shell skopeo inspect docker://quay.io/silicom/tsyncd:$(TSYNC_VERSION)  --format '{{ .Digest }}')
 	@echo quay.io/silicom/gpsd@$(shell skopeo inspect docker://quay.io/silicom/gpsd:3.23.1 --format '{{ .Digest }}')
-	@echo quay.io/silicom/grpc-tsyncd@$(shell skopeo inspect docker://quay.io/silicom/grpc-tsyncd:2.1.0.0 --format '{{ .Digest }}')
+	@echo quay.io/silicom/grpc-tsyncd@$(shell skopeo inspect docker://quay.io/silicom/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ .Digest }}')
 	@echo quay.io/silicom/tsync_extts@$(shell skopeo inspect docker://quay.io/silicom/tsync_extts:1.0.0 --format '{{ .Digest }}')
 	@echo quay.io/silicom/phc2sys@$(shell skopeo inspect docker://quay.io/silicom/phc2sys:3.1.1 --format '{{ .Digest }}')
-	@echo quay.io/silicom/ice-driver-src@$(shell skopeo inspect docker://quay.io/silicom/ice-driver-src:1.7.16.1 --format '{{ .Digest }}')
+	@echo quay.io/silicom/ice-driver-src@$(shell skopeo inspect docker://quay.io/silicom/ice-driver-src:1.8.3 --format '{{ .Digest }}')
