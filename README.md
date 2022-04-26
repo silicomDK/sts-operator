@@ -35,6 +35,18 @@ This consists of the following daemons on labelled nodes, all of these running i
 * phc2sys
 * grpc-tsyncd
 
+## StsOperatorConfig
+Example (default)
+```yaml
+apiVersion: sts.silicom.com/v1alpha1
+kind: StsOperatorConfig
+metadata:
+  name: stsoperatorconfig
+  namespace: sts-silicom
+spec:
+
+```
+
 ## StsConfig
 Example  (Grand Master mode)
 ```yaml
