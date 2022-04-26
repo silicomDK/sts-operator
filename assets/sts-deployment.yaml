@@ -223,14 +223,6 @@ spec:
           name: {{.ServicePrefix}}-svc
       - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
         imagePullPolicy: Always
-        name:  {{.NodeName}}-log
-        command: ["tail"]
-        args: ["-f", "/var/log/tsyncd.log"]
-        volumeMounts:
-          - name:  tmpfs
-            mountPath:  /var/log
-      - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
-        imagePullPolicy: Always
         name: {{.NodeName}}-tsync
         env:
           - name: WAIT_FOR_GPS
