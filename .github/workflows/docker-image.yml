@@ -29,6 +29,9 @@ jobs:
     - name: fmt
       run: IS_CONTAINER=yes make fmt
 
+    - name: Controller-gen
+      run: make controller-gen
+
     - name: Build
       run: make all docker-build
 
