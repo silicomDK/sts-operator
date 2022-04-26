@@ -30,12 +30,15 @@ COPY assets assets
 
 ARG STS_VERSION
 
+COPY LICENSE /licenses/
+USER 1000:1000
+
 ### Required OpenShift Labels
-LABEL name="sts-operator" \
+LABEL name="silicom-sts-operator" \
       maintainer="rmr@silicom.dk" \
       vendor="Silicom" \
       version="$STS_VERSION" \
-      summary="Provides node level sts support" \
-      description="Application to query and maintain sts cards"
+      summary="Operator to deploy sts ptp timing stack" \
+      description="Operator to deploy sts ptp timing stack"
 
 ENTRYPOINT ["/manager"]

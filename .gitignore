@@ -23,3 +23,6 @@ testbin/*
 *.swp
 *.swo
 *~
+
+redhat-marketplace-operators
+community-operators-prod

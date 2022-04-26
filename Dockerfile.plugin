@@ -36,6 +36,9 @@ RUN microdnf install pciutils iproute \
 
 COPY --from=1 /workspace/sts-plugin /
 
+COPY LICENSE /licenses/
+USER 1000:1000
+
 ARG STS_VERSION
 ### Required OpenShift Labels
 LABEL name="sts-plugin" \
