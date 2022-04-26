@@ -35,37 +35,6 @@ This consists of the following daemons on labelled nodes, all of these running i
 * phc2sys
 * grpc-tsyncd
 
-## StsOperatorConfig
-Example (default)
-```yaml
-apiVersion: sts.silicom.com/v1alpha1
-kind: StsOperatorConfig
-metadata:
-  name: stsoperatorconfig
-  namespace: sts-silicom
-spec:
-  images:
-    tsyncd: quay.io/silicom/tsyncd:2.1.0.0
-    ts2Phcs: quay.io/silicom/ts2phcs:1.0.0
-    phcs2Sys: quay.io/silicom/phcs2sys:3.1.1
-    grpcTsyncd: quay.io/silicom/grpc-tsyncd:2.1.0.0
-    gpsd: quay.io/silicom/gpsd:3.23.1
-  grpcSvcPort: 50051
-  gpsSvcPort: 2947
-  sro:
-    namespace: openshift-operators
-    iceVersion: 1.7.16.1
-    srcImage: quay.io/silicom/ice-driver-src:1.7.16.1
-    srcSvcPort: 3000
-    chart:
-      repository:
-        url: http://ice-driver-src
-        name: ice-special-resource
-      name: ice-special-resource
-      version: 0.0.1
-
-```
-
 ## StsConfig
 Example  (Grand Master mode)
 ```yaml
@@ -84,12 +53,12 @@ spec:
       synce: 1
       holdoff: 500
       mode: Master
-      ethPort: 0
+      ethPort: 1
     - ethName: enp2s0f1
       synce: 1
       holdoff: 500
       mode: Master
-      ethPort: 1
+      ethPort: 2
 ```
 
 ## StsNode
@@ -142,10 +111,6 @@ status:
     lon: ""
     mode: 0
     time: "2021-12-07T08:56:41.781Z"
-  tsyncStatus:
-    mode: PTP Master Mode
-    status: Normal Status
-    time: Tue, 07 Dec 2021 08:56:41 UTC
 
 ```
 

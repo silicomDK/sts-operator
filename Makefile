@@ -168,17 +168,19 @@ endef
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 operator-sdk:
-	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.16.0/operator-sdk_linux_amd64 -o bin/operator-sdk
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.19.1/operator-sdk_linux_amd64 -o bin/operator-sdk
 	chmod +x bin/operator-sdk
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+	- rm  bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	bin/operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | bin/operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS) $(EXTRA_SERVICE_ACCOUNTS)
 	echo "  com.redhat.openshift.versions: \"v4.8\"" >> bundle/metadata/annotations.yaml
 	echo "LABEL com.redhat.openshift.versions=\"v4.8\"" >> bundle.Dockerfile
 	echo "LABEL com.redhat.delivery.operator.bundle=true" >> bundle.Dockerfile
+	cat images.yaml >> bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	bin/operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
@@ -259,8 +261,8 @@ marketplace-bundle: bundle
 	cp bundle.Dockerfile  $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	cp -av bundle/* $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
 	rm $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
-	@echo "cert_project_id: 6266943761336b5931b9632c" > $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/ci.yaml
-	@echo "organization: redhat-marketplace" >> $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/ci.yaml
+	@echo "cert_project_id: 6266943761336b5931b9632c" > $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
+	@echo "organization: redhat-marketplace" >> $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
 
 OPP = bin/opp.sh
 opp:

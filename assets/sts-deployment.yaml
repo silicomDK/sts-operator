@@ -124,13 +124,13 @@ metadata:
   labels:
     sts.silicom.com/svc: gpsd
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
   ports:
     - protocol: TCP
-      port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-      targetPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+      port: 2947
+      targetPort: 2947
 
 ---
 {{end}}
@@ -143,13 +143,22 @@ metadata:
   labels:
     sts.silicom.com/svc: tsyncd
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   ports:
     - protocol: TCP
-      port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-      targetPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
+      port: 50051
+      targetPort: 50051
+    - protocol: TCP
+      port: 50052
+      targetPort: 50052
+    - protocol: TCP
+      port: 50053
+      targetPort: 50053
+    - protocol: TCP
+      port: 50054
+      targetPort: 50054
 
 ---
 
@@ -204,8 +213,14 @@ spec:
         #   initialDelaySeconds: 60
         #   periodSeconds: 60
         ports:
-        - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-          name: {{.ServicePrefix}}-tsyncd
+        - containerPort: 50054
+          name: {{.ServicePrefix}}-stat
+        - containerPort: 50053
+          name: {{.ServicePrefix}}-cfg
+        - containerPort: 50052
+          name: {{.ServicePrefix}}-evt
+        - containerPort: 50051
+          name: {{.ServicePrefix}}-svc
       - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
         imagePullPolicy: Always
         name:  {{.NodeName}}-log
@@ -225,7 +240,7 @@ spec:
             value: "false"
 {{- end}}
           - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+            value: "2947"
         args:
         - --zap-log-level=10
         volumeMounts:

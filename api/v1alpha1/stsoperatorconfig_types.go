@@ -73,10 +73,10 @@ type SroCfg struct {
 
 type StsImages struct {
 
-	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.1.0.0"
+	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.1.1.1"
 	Tsyncd string `json:"tsyncd,omitempty"`
 
-	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.1.0.0"
+	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.1.1.1"
 	GrpcTsyncd string `json:"grpcTsyncd,omitempty"`
 
 	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.2"

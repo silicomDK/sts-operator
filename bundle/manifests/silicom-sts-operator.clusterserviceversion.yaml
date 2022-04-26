@@ -217,7 +217,7 @@ metadata:
       for Kubernetes.
     operators.openshift.io/infrastructure-features: '["Disconnected"]'
     operators.operatorframework.io.bundle.channels.v1: alpha
-    operators.operatorframework.io/builder: operator-sdk-v1.15.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.19.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/silicomdk/sts-operator
   labels:
@@ -456,7 +456,9 @@ spec:
           - update
         serviceAccountName: sts-plugin
       deployments:
-      - name: sts-controller-manager
+      - label:
+          control-plane: controller-manager
+        name: sts-controller-manager
         spec:
           replicas: 1
           selector:
@@ -627,6 +629,8 @@ spec:
   provider:
     name: Silicom Ltd.
     url: http://www.silicom-usa.com
+  replaces: silicom-sts-operator.v0.0.4
+  version: 0.0.5
   relatedImages:
   - image: quay.io/silicom/gpsd@sha256:fc0566f298bc5b28568f0c0cd752d9d4bd53cac6e616cc6cf2a3a016db54eeb0
     name: gpsd
@@ -640,5 +644,3 @@ spec:
     name: tsync_extts
   - image: quay.io/silicom/sts-plugin@sha256:9b3548764563ba6ee55b4f4a589b8dbf84f6c390a6ccd67f1a2827644bb6f637
     name: sts-plugin
-  replaces: silicom-sts-operator.v0.0.4
-  version: 0.0.5
