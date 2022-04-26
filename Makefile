@@ -233,10 +233,17 @@ catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 preflight-plugin:
-	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
+	echo '{}' > config.json
+	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=62679ca7d634ea6b75a3af92 \
+		--submit -d config.json
 
 preflight-operator:
-	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-operator:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/sts-operator:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=6268270b61336b5931b96337 \
+		--submit -d config.json
 
 plugin:
 	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=$(IMAGE_REGISTRY)/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
