@@ -17,8 +17,6 @@ import (
 	"time"
 
 	stsv1alpha1 "github.com/silicomdk/sts-operator/api/v1alpha1"
-	pb "github.com/silicomdk/sts-operator/grpc/tsynctl"
-	grpc "google.golang.org/grpc"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -117,42 +115,6 @@ func query_host(stsNode *stsv1alpha1.StsNode) {
 	}
 }
 
-func query_tsyncd(svc_str string, stsNode *stsv1alpha1.StsNode) {
-
-	conn, err := grpc.Dial(svc_str, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		fmt.Printf("Could not connect: %v\n", err)
-		return
-	}
-	defer conn.Close()
-
-	gRpcClient := pb.NewTsynctlGrpcClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-
-	message, err := gRpcClient.GetStatus(ctx, &pb.Empty{})
-	if err != nil {
-		fmt.Printf("could not get status: %v\n", err)
-	} else {
-		stsNode.Status.TsyncStatus.Status = message.GetMessage()
-	}
-
-	message, err = gRpcClient.GetMode(ctx, &pb.Empty{})
-	if err != nil {
-		fmt.Printf("could not get mode: %v\n", err)
-	} else {
-		stsNode.Status.TsyncStatus.Mode = message.GetMessage()
-	}
-
-	timeReply, err := gRpcClient.GetTime(ctx, &pb.Empty{})
-	if err != nil {
-		fmt.Printf("could not get time: %v\n", err)
-	} else {
-		stsNode.Status.TsyncStatus.Time = timeReply.GetMessage()
-
-	}
-	cancel()
-}
-
 /*
 {"class":"POLL","time":"2010-06-04T10:31:00.289Z","active":1,
     "tpv":[{"class":"TPV","device":"/dev/ttyUSB0",
@@ -230,9 +192,6 @@ func main() {
 	stsNode.Name = nodeName
 	stsNode.Namespace = namespace
 
-	grpcSvcPort, _ := strconv.Atoi(os.Getenv("GRPC_SVC_PORT"))
-	grpcSvcStr := fmt.Sprintf("%s:%d", nodeName, grpcSvcPort)
-
 	gpsSvcPort, _ := strconv.Atoi(os.Getenv("GPS_SVC_PORT"))
 	gpsSvcStr := fmt.Sprintf("%s:%d", nodeName, gpsSvcPort)
 
@@ -247,6 +206,26 @@ func main() {
 	}
 
 	for {
+
+		err = k8sClient.Get(context.Background(),
+			client.ObjectKey{
+				Namespace: namespace,
+				Name:      nodeName,
+			}, stsNode)
+		if err != nil {
+			if err = k8sClient.Create(context.TODO(), stsNode); err != nil {
+				panic(err.Error())
+			}
+		}
+
+		err = k8sClient.Get(context.TODO(),
+			client.ObjectKey{
+				Name: os.Getenv("NODE_NAME"),
+			}, &node)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		query_host(stsNode)
 
 		err = k8sClient.Get(context.TODO(),
@@ -279,7 +258,6 @@ func main() {
 			}
 		}
 
-		query_tsyncd(grpcSvcStr, stsNode)
 		query_gpsd(gpsSvcStr, stsNode)
 
 		if err := k8sClient.Status().Update(context.TODO(), stsNode); err != nil {

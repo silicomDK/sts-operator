@@ -5,15 +5,20 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.1
+    containerImage: quay.io/silicom/sts-operator:0.0.5
     createdAt: 2021-11-17T10:21:24 CET
     description: This Operator is a Kubernetes custom controller whose goal is to
       serve the installation and lifecycle management of Silicom STS device plugins
       for Kubernetes.
+    operators.openshift.io/infrastructure-features: '["Disconnected"]'
+    operators.operatorframework.io.bundle.channels.v1: alpha
     operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/silicomdk/sts-operator
-  name: silicom-sts-operator.v2.0.1.0
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/os.linux: supported
+  name: silicom-sts-operator.v0.0.5
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -34,17 +39,6 @@ spec:
       kind: StsOperatorConfig
       name: stsoperatorconfigs.sts.silicom.com
       version: v1alpha1
-    required:
-    - description: Discovers STS cards and labels the nodes appropriately.
-      displayName: Node Feature Discovery
-      kind: NodeFeatureDiscovery
-      name: nodefeaturediscoveries.nfd.openshift.io
-      version: v1
-    - description: Responsible for the ICE driver special resource
-      displayName: Special Resource
-      kind: SpecialResource
-      name: specialresources.sro.openshift.io
-      version: v1beta1
   description: |
     Silicom STS line card for 4G and 5G NIC enable real-time data transmission
     with high timing accuracy at the lowest cost to power 5G DRAN and CRAN edge
@@ -93,8 +87,22 @@ spec:
   maintainers:
   - email: rmr@silicom.dk
     name: Ryan M. Raasch
-  maturity: alpha
+  maturity: beta
   provider:
     name: Silicom Ltd.
     url: http://www.silicom-usa.com
-  version: 0.0.1
+  relatedImages:
+  - image: quay.io/silicom/gpsd@sha256:fc0566f298bc5b28568f0c0cd752d9d4bd53cac6e616cc6cf2a3a016db54eeb0
+    name: gpsd
+  - image: quay.io/silicom/phc2sys@sha256:50264cf3254fd40f5b5b1680c79a2f1759e58149e83563233e3618307951e0bf
+    name: phc2sys
+  - image: quay.io/silicom/tsyncd@sha256:187894b7e025e6f0f2422eef2907cb76685737afe9376da4a0f531a06368843a
+    name: tsyncd
+  - image: quay.io/silicom/grpc-tsyncd@sha256:6e49f012c6eb1fc5881638aa2788f5721b31c6d1a46fb27d87193a30c5517f71
+    name: grpc-tsync
+  - image: quay.io/silicom/tsync_extts@sha256:30dd6b493896a219ff7464813a9347595a3239ec31a6e30103cef1446c606971
+    name: tsync_extts
+  - image: quay.io/silicom/sts-plugin@sha256:9b3548764563ba6ee55b4f4a589b8dbf84f6c390a6ccd67f1a2827644bb6f637
+    name: sts-plugin
+  replaces: silicom-sts-operator.v0.0.4
+  version: 0.0.5

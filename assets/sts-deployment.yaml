@@ -1,75 +1,41 @@
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Namespace}}
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Namespace}}
-rules:
-- apiGroups:
-  - sts.silicom.com
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-  - update
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  verbs:
-  - use
-  resourceNames:
-  - privileged
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Namespace}}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: {{.StsConfig.Name}}
-subjects:
-- kind: ServiceAccount
-  name: {{.StsConfig.Name}}
-  namespace: {{.StsOperatorConfig.Namespace}}
-
----
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{.StsConfig.Name}}-tsync-conf
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
 data:
   tsyncd.conf: |
     profileID = {{.ProfileId}}
-{{range $i, $dev := .StsConfig.Spec.Interfaces}}
-    nicStr{{inc $i}} = {{$dev.EthName}}
-    qlEnable{{inc $i}} = {{$dev.QlEnable}}
-    holdOff{{inc $i}} = {{$dev.HoldOff}}
-    ql{{inc $i}} = {{$dev.Ql}}
+
+{{- range $i, $dev := .StsConfig.Spec.Interfaces }}
+    port{{$dev.EthPort}} = {{$dev.EthName}}
+    ql{{$dev.EthPort}} = {{$dev.Ql}}
 {{end}}
-    slavePortMask = {{printf "0x%x" .SlavePortMask}}
-    masterPortMask = {{printf "0x%x" .MasterPortMask}}
-    syncePortMask = {{printf "0x%x" .SyncePortMask}}
+
+    synceHoldOff = {{.StsConfig.Spec.SynceHoldOff}}
+
+{{- if or (eq .ProfileId 2) (eq .ProfileId 5) }}
+    masterPortMask_GM = {{printf "0x%x" .MasterPortMask}}
+    syncePortMask_GM = {{printf "0x%x" .SyncePortMask}}
+{{end}}
+
+{{- if or (eq .ProfileId 3) (eq .ProfileId 6) (eq .ProfileId 8) }}
+    masterPortMask_BC = {{printf "0x%x" .MasterPortMask}}
+    slavePortMask_BC = {{printf "0x%x" .SlavePortMask}}
+    syncePortMask_BC = {{printf "0x%x" .SyncePortMask}}
+{{end}}
+
+{{- if or (eq .ProfileId 4) (eq .ProfileId 7) (eq .ProfileId 9) }}
+    slavePortMask_TSC = {{printf "0x%x" .SlavePortMask}}
+    syncePortMask_TSC = {{printf "0x%x" .SyncePortMask}}
+{{end}}
+
     phyLedsCtl = {{.StsConfig.Spec.PhyLedsCtl}}
-    IPCServer = 1
-    domainNum = {{.StsConfig.Spec.DomainNumber}}
+
+    domainNum_8275_1 = {{ .StsConfig.Spec.DomainNum_8275_1 }}
+    domainNum_8275_2 = {{ .StsConfig.Spec.DomainNum_8275_2 }}
+    domainNum_8265_2 = {{ .StsConfig.Spec.DomainNum_8265_2 }}
+
     forwardable = {{.StsConfig.Spec.Forwardable}}
     twoStep = {{.StsConfig.Spec.TwoStep}}
     priority2 = {{.StsConfig.Spec.Priority2}}
@@ -80,6 +46,10 @@ data:
     synceRecClkPort = {{.StsConfig.Spec.SynceRecClkPort}}
     syncOption = {{.StsConfig.Spec.SyncOption}}
     synceCpu = {{.StsConfig.Spec.SynceCpu}}
+
+{{- if or (eq .ProfileId 5) (eq .ProfileId 6) (eq .ProfileId 7) (eq .ProfileId 8) (eq .ProfileId 9) }}
+    ipv6PortMask = {{printf "0x%x" .Ipv6PortMask}}
+{{end}}
     swTimestamp = 0
     inbandMode = 1 
     dumpMode = 0
@@ -88,13 +58,60 @@ data:
     dataDelay = 0
     statDelay = 0
     aprLevel = {{.StsConfig.Spec.AprLevel}}
-    traceModule = 23
+    traceModule = {{.StsConfig.Spec.TraceModule}}
     traceLevel = {{.StsConfig.Spec.TraceLevel}}
     tracePtpMsg = {{.StsConfig.Spec.TracePtpMsg}}
     esmcMode = {{.StsConfig.Spec.EsmcMode}}
     ssmMode = {{.StsConfig.Spec.SsmMode}}
     whenWriteLog = 0
     debugAPI = 0
+    IPCServer = 1
+    gnssSigGpsEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsEn}}
+    gnssSigGpsL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL1CAEn}}
+    gnssSigGpsL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigGpsL2CEn}}
+    gnssSigSBASEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASEn}}
+    gnssSigSBASL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigSBASL1CAEn}}
+    gnssSigGalEn = {{.StsConfig.Spec.GnssSpec.GnssSigGalEn}}
+    gnssSigGalE1En = {{.StsConfig.Spec.GnssSpec.GnssSigGalE1En}}
+    gnssSigGalE5BEn = {{.StsConfig.Spec.GnssSpec.GnssSigGalE5BEn}}
+    gnssSigBDSEn = {{.StsConfig.Spec.GnssSpec.GnssSigBDSEn}}
+    gnssSigBDSB1En = {{.StsConfig.Spec.GnssSpec.GnssSigBDSB1En}}
+    gnssSigBDSB2En = {{.StsConfig.Spec.GnssSpec.GnssSigBDSB2En}}
+    gnssSigQZSSEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSEn}}
+    gnssSigQZSSL1CAEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL1CAEn}}
+    gnssSigQZSSL1SEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL1SEn}}
+    gnssSigQZSSL2CEn = {{.StsConfig.Spec.GnssSpec.GnssSigQZSSL2CEn}}
+    gnssSigGLOEn = {{.StsConfig.Spec.GnssSpec.GnssSigGLOEn}}
+    gnssSigGLOL1En = {{.StsConfig.Spec.GnssSpec.GnssSigGLOL1En}}
+    gnssSigGLOL2En = {{.StsConfig.Spec.GnssSpec.GnssSigGLOL2En}}
+    gnssCableDelay = {{.StsConfig.Spec.GnssSpec.GnssCableDelay}}
+    gnssPulseDef = {{.StsConfig.Spec.GnssSpec.GnssPulseDef}}
+    gnssPulseLenDef = {{.StsConfig.Spec.GnssSpec.GnssPulseLenDef}}
+    gnssTP1En = {{.StsConfig.Spec.GnssSpec.GnssTP1En}}
+    gnssFreqTP1 = {{.StsConfig.Spec.GnssSpec.GnssFreqTP1}}
+    gnssFreqLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssFreqLockTP1}}
+    gnssUseLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssUseLockTP1}}
+    gnssDutyTP1 = {{.StsConfig.Spec.GnssSpec.GnssDutyTP1}}
+    gnssDutyLockTP1 = {{.StsConfig.Spec.GnssSpec.GnssDutyLockTP1}}
+    gnssTP2En = {{.StsConfig.Spec.GnssSpec.GnssTP2En}}
+    gnssFreqTP2 = {{.StsConfig.Spec.GnssSpec.GnssFreqTP2}}
+    gnssFreqLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssFreqLockTP2}}
+    gnssUseLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssUseLockTP2}}
+    gnssDutyTP2 = {{.StsConfig.Spec.GnssSpec.GnssDutyTP2}}
+    gnssDutyLockTP2 = {{.StsConfig.Spec.GnssSpec.GnssDutyLockTP2}}
+    gnssMinElev = {{.StsConfig.Spec.GnssSpec.GnssMinElev}}
+    gnssMinSatSig = {{.StsConfig.Spec.GnssSpec.GnssMinSatSig}}
+    gnssMsgNmeaUsb = {{.StsConfig.Spec.GnssSpec.GnssMsgNmeaUsb}}
+    gnssMsgUbxUsb = {{.StsConfig.Spec.GnssSpec.GnssMsgUbxUsb}}
+    gnssIntfDetect = {{.StsConfig.Spec.GnssSpec.GnssIntfDetect}}
+    gnssAntSet = {{.StsConfig.Spec.GnssSpec.GnssAntSet}}
+    gnssRecvTMode = {{.StsConfig.Spec.GnssSpec.GnssRecvTMode}}
+    gnssSvinMinDur = {{.StsConfig.Spec.GnssSpec.GnssSvinMinDur}}
+    gnssSvinAccLimit = {{.StsConfig.Spec.GnssSpec.GnssSvinAccLimit}}
+    gnssLockMode = {{.StsConfig.Spec.GnssSpec.GnssLockMode}}
+    gnssLockTh = {{.StsConfig.Spec.GnssSpec.GnssLockTh}}
+    gnssClockOutEn = {{.StsConfig.Spec.GnssSpec.GnssClockOutEn}}
+
 
 ---
 
@@ -103,17 +120,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-gpsd
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: gpsd
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: {{.StsConfig.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
   ports:
     - protocol: TCP
-      port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-      targetPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+      port: 2947
+      targetPort: 2947
 
 ---
 {{end}}
@@ -122,17 +139,26 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServicePrefix}}-tsyncd
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   labels:
     sts.silicom.com/svc: tsyncd
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: {{.StsConfig.Name}}-{{.NodeName}}
+    app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   ports:
     - protocol: TCP
-      port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-      targetPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
+      port: 50051
+      targetPort: 50051
+    - protocol: TCP
+      port: 50052
+      targetPort: 50052
+    - protocol: TCP
+      port: 50053
+      targetPort: 50053
+    - protocol: TCP
+      port: 50054
+      targetPort: 50054
 
 ---
 
@@ -142,9 +168,9 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-tsync
   name: {{.StsConfig.Name}}-{{.NodeName}}-tsync
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
-    openshift.io/scc: {{.StsOperatorConfig.Namespace}}
+    openshift.io/scc: {{.StsConfig.Name}}
 spec:
   selector:
     matchLabels:
@@ -163,7 +189,8 @@ spec:
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.GrpcTsyncd}}
@@ -186,8 +213,14 @@ spec:
         #   initialDelaySeconds: 60
         #   periodSeconds: 60
         ports:
-        - containerPort: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-          name: {{.ServicePrefix}}-tsyncd
+        - containerPort: 50054
+          name: {{.ServicePrefix}}-stat
+        - containerPort: 50053
+          name: {{.ServicePrefix}}-cfg
+        - containerPort: 50052
+          name: {{.ServicePrefix}}-evt
+        - containerPort: 50051
+          name: {{.ServicePrefix}}-svc
       - image: {{.StsOperatorConfig.Spec.Images.Tsyncd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-tsync
@@ -199,7 +232,7 @@ spec:
             value: "false"
 {{- end}}
           - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+            value: "2947"
         args:
         - --zap-log-level=10
         volumeMounts:
@@ -208,9 +241,13 @@ spec:
           - name: {{.StsConfig.Name}}-tsync-conf
             mountPath: /etc/tsyncd/tsyncd.conf
             subPath: tsyncd.conf
+          - name:  tmpfs
+            mountPath:  /var/log
         securityContext:
           privileged: true
       volumes:
+        - name: tmpfs
+          emptyDir: {}
         - name: devfs
           hostPath:
             path: /dev
@@ -227,9 +264,9 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
   name: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
-    openshift.io/scc: {{.StsOperatorConfig.Namespace}}
+    openshift.io/scc: {{.StsConfig.Name}}
 spec:
   selector:
     matchLabels:
@@ -242,13 +279,14 @@ spec:
         app: {{.StsConfig.Name}}-{{.NodeName}}-phc2sys
     spec:
       shareProcessNamespace: true
-      nodeName: {{.NodeName}}
       nodeSelector:
+        kubernetes.io/hostname: {{.NodeName}}
         sts.silicom.com/ice-driver-available: "true"
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.Phc2sys}}
@@ -288,9 +326,9 @@ metadata:
   labels:
     app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
   name: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
-  namespace: {{.StsOperatorConfig.Namespace}}
+  namespace: {{.StsConfig.Spec.Namespace}}
   annotations:
-    openshift.io/scc: {{.StsOperatorConfig.Namespace}}
+    openshift.io/scc: {{.StsConfig.Name}}
 spec:
   selector:
     matchLabels:
@@ -303,13 +341,14 @@ spec:
         app: {{.StsConfig.Name}}-{{.NodeName}}-gpsd
     spec:
       shareProcessNamespace: true
-      nodeName: {{.NodeName}}
       nodeSelector:
+        kubernetes.io/hostname: {{.NodeName}}
         sts.silicom.com/ice-driver-available: "true"
 {{- range $k, $v := .StsConfig.Spec.NodeSelector }}
         {{ $k }}: "{{ $v }}"
 {{- end }}
-      serviceAccount: {{.StsConfig.Name}}
+      serviceAccount: sts-tsync
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - image: {{.StsOperatorConfig.Spec.Images.TsyncExtts}}

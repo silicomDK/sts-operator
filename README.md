@@ -16,6 +16,11 @@
 - [StsConfig](#stsconfig)
 - [Quick Start](#quick-start)
 
+## Links
+- [Is your app air gap friendly?](https://cloud.redhat.com/blog/is-your-operator-air-gap-friendly)
+- [Building air gap friendly](https://cloud.redhat.com/blog/building-an-air-gap-friendly-operator)
+- [Operators in restricted networks](https://docs.openshift.com/container-platform/4.9/operators/operator_sdk/osdk-generating-csvs.html#olm-enabling-operator-for-restricted-network_osdk-generating-csvs)
+
 ## STS Operator
 Sts Operator, runs in `sts-silicom` namespace, manages cluster wide STS configurations. It offers `StsConfig` and `StsOperatorConfig` CRDs and creates `tsyncd` to apply node specific STS config.
 
@@ -39,14 +44,6 @@ metadata:
   name: stsoperatorconfig
   namespace: sts-silicom
 spec:
-  images:
-    tsyncd: quay.io/silicom/tsyncd:2.0.1.0
-    ts2Phcs: quay.io/silicom/ts2phcs:1.0.0
-    phcs2Sys: quay.io/silicom/phcs2sys:3.1.1
-    grpcTsyncd: quay.io/silicom/grpc-tsyncd:2.0.1.0
-    gpsd: quay.io/silicom/gpsd:3.23.1
-  grpcSvcPort: 50051
-  gpsSvcPort: 2947
 
 ```
 
@@ -68,12 +65,12 @@ spec:
       synce: 1
       holdoff: 500
       mode: Master
-      ethPort: 0
+      ethPort: 1
     - ethName: enp2s0f1
       synce: 1
       holdoff: 500
       mode: Master
-      ethPort: 1
+      ethPort: 2
 ```
 
 ## StsNode
@@ -126,10 +123,6 @@ status:
     lon: ""
     mode: 0
     time: "2021-12-07T08:56:41.781Z"
-  tsyncStatus:
-    mode: PTP Master Mode
-    status: Normal Status
-    time: Tue, 07 Dec 2021 08:56:41 UTC
 
 ```
 

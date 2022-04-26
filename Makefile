@@ -3,14 +3,19 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
-IMG_VERSION ?= 0.0.1
+VERSION ?= $(shell git branch --show-current)
+IMG_VERSION ?= $(shell git branch --show-current)
+
+EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
+
+TSYNC_VERSION := 2.1.1.1
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+CHANNELS?="alpha"
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -20,6 +25,7 @@ endif
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
 # - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
 # - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+DEFAULT_CHANNEL?="alpha"
 ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
@@ -29,8 +35,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# quay.io/silicom/operator-bundle:$VERSION and quay.io/silicom/operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= quay.io/silicom/sts-operator
+# $(IMAGE_REGISTRY)/operator-bundle:$VERSION and quay.io/silicom/operator-catalog:$VERSION.
+IMAGE_REGISTRY ?= quay.io/silicom
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY)/sts-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -42,6 +49,14 @@ IMG ?= $(IMAGE_TAG_BASE):$(IMG_VERSION)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
+
+COMMUNITY_OPERATORS_GIT := https://github.com/silicomDK/community-operators-prod.git
+COMMUNITY_OPERATORS_DIR := community-operators-prod
+COMMUNITY_OPERATORS_VER := $(shell git branch --show-current)
+COMMUNITY_OPERATORS_OP  := silicom-sts-operator
+
+MARKETPLACE_DIR         := redhat-marketplace-operators
+MARKETPLACE_GIT         := https://github.com/silicomDK/redhat-marketplace-operators.git
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -100,7 +115,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go --zap-devel
 
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build --build-arg STS_VERSION=$(VERSION) -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
@@ -120,6 +135,10 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+PREFLIGHT = $(shell pwd)/bin/preflight
+preflight:
+	curl -sL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.1.0/preflight-linux-amd64 -o ./bin/preflight
+	chmod +x bin/preflight
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
@@ -147,13 +166,22 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
+operator-sdk:
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.19.1/operator-sdk_linux_amd64 -o bin/operator-sdk
+	chmod +x bin/operator-sdk
+
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
-	operator-sdk generate kustomize manifests -q
+	- rm  bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
+	bin/operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
-	echo "  com.redhat.openshift.versions: v4.8" >> bundle/metadata/annotations.yaml
+	$(KUSTOMIZE) build config/manifests | bin/operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS) $(EXTRA_SERVICE_ACCOUNTS)
+	echo "  com.redhat.openshift.versions: \"v4.8\"" >> bundle/metadata/annotations.yaml
+	echo "LABEL com.redhat.openshift.versions=\"v4.8\"" >> bundle.Dockerfile
+	echo "LABEL com.redhat.delivery.operator.bundle=true" >> bundle.Dockerfile
+	cat images.yaml >> bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
+	bin/operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
@@ -185,7 +213,7 @@ endif
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
@@ -204,20 +232,53 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+preflight-plugin:
+	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
+
+preflight-operator:
+	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-operator:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
+
 plugin:
-	docker build . -t quay.io/silicom/sts-plugin:$(IMG_VERSION) -f Dockerfile.plugin
+	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=$(IMAGE_REGISTRY)/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
 
 plugin-push:
-	docker push quay.io/silicom/sts-plugin:$(IMG_VERSION)
-
-s2i: ice.tgz
-	curl -sL https://github.com/openshift/source-to-image/releases/download/v1.3.1/source-to-image-v1.3.1-a5a77147-linux-amd64.tar.gz -o s2i.tar.gz
-	tar xvf s2i.tar.gz -C bin
-	rm s2i.tar.gz
-
-ice.tgz:
-	- mkdir src
-	curl -sL "https://sourceforge.net/projects/e1000/files/ice%20stable/1.6.4/ice-1.6.4.tar.gz/download" -o ice.tgz
-	tar xvf ice.tgz -C src
+	docker push $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION)
 
 bundle-all: generate manifests bundle bundle-build
+
+community-clone:
+	git clone $(COMMUNITY_OPERATORS_GIT)
+
+community-bundle: bundle
+	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
+
+marketplace-clone:
+	git clone $(MARKETPLACE_GIT)
+
+marketplace-bundle: bundle
+	cp bundle.Dockerfile  $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	cp -av bundle/* $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
+	rm $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
+	@echo "cert_project_id: 6266943761336b5931b9632c" > $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
+	@echo "organization: redhat-marketplace" >> $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
+
+OPP = bin/opp.sh
+opp:
+	curl -sL https://raw.githubusercontent.com/redhat-openshift-ecosystem/community-operators-pipeline/ci/latest/ci/scripts/opp.sh -o bin/opp.sh
+	chmod +x bin/opp.sh
+
+opp-community-test: community-bundle
+	cd $(COMMUNITY_OPERATORS_DIR)
+	OPP_PRODUCTION_TYPE=ocp OPP_AUTO_PACKAGEMANIFEST_CLUSTER_VERSION_LABEL=1 \
+		$(OPP) all $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)
+
+update-csv:
+	@echo $(IMAGE_REGISTRY)/sts-plugin@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/sts-plugin:$(VERSION) --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/tsyncd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION)  --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/gpsd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/grpc-tsyncd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/tsync_extts@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/phc2sys@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ .Digest }}')
+	@echo $(IMAGE_REGISTRY)/ice-driver-src@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/ice-driver-src:1.8.3 --format '{{ .Digest }}')

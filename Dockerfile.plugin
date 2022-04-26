@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2020 Intel Corporation
-
+ARG GRPC_TSYNC
+FROM $GRPC_TSYNC
 FROM golang
 
 WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
 COPY api/ api/
-COPY grpc/ grpc/
 RUN go mod download
 
 ADD	https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip protoc.zip
@@ -19,18 +19,33 @@ RUN apt update && \
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 RUN	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
+COPY --from=0  /etc/tsyncd/*.proto grpc/tsynctl/
 RUN protoc --go_out=. \
            --go_opt=paths=source_relative \
            --go-grpc_out=. \
            --go-grpc_opt=paths=source_relative \
-            grpc/tsynctl/grpc_tsynctl.proto
+           --proto_path=grpc/tsynctl/ \
+            grpc/tsynctl/*.proto
 
 COPY sts-plugin/main.go main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o sts-plugin main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
-RUN microdnf install pciutils iproute
+RUN microdnf install pciutils iproute \
+    && microdnf update
 
-COPY --from=0 /workspace/sts-plugin /
+COPY --from=1 /workspace/sts-plugin /
+
+COPY LICENSE /licenses/
+USER 1000:1000
+
+ARG STS_VERSION
+### Required OpenShift Labels
+LABEL name="sts-plugin" \
+      maintainer="rmr@silicom.dk" \
+      vendor="Silicom" \
+      version="$STS_VERSION" \
+      summary="Provides node level sts support" \
+      description="Application to query and maintain sts cards"
 
 ENTRYPOINT ["/sts-plugin"]

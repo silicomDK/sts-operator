@@ -6,23 +6,6 @@ WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
 COPY api/ api/
-COPY grpc/ grpc/
-
-ADD	https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip protoc.zip
-RUN apt update && \
-    apt install unzip && \
-    unzip protoc.zip && \
-    mv bin/protoc /usr/bin/
-
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-RUN	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-
-RUN protoc --go_out=. \
-           --go_opt=paths=source_relative \
-           --go-grpc_out=. \
-           --go-grpc_opt=paths=source_relative \
-            grpc/tsynctl/grpc_tsynctl.proto
-
 
 #RUN go mod tidy
 
@@ -38,9 +21,24 @@ COPY controllers/ controllers/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
-RUN microdnf install pciutils kmod procps iproute nc
+RUN microdnf install pciutils kmod procps iproute nc \
+    && microdnf update
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY assets assets
+
+ARG STS_VERSION
+
+COPY LICENSE /licenses/
+USER 1000:1000
+
+### Required OpenShift Labels
+LABEL name="silicom-sts-operator" \
+      maintainer="rmr@silicom.dk" \
+      vendor="Silicom" \
+      version="$STS_VERSION" \
+      summary="Operator to deploy sts ptp timing stack" \
+      description="Operator to deploy sts ptp timing stack"
 
 ENTRYPOINT ["/manager"]
