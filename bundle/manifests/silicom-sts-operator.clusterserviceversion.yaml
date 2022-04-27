@@ -187,7 +187,7 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.5
+    containerImage: quay.io/silicom/sts-operator:0.0.6
     createdAt: 2021-11-17T10:21:24 CET
     description: |
       This Operator is a Kubernetes custom controller whose goal
@@ -201,7 +201,7 @@ metadata:
   labels:
     operatorframework.io/arch.amd64: supported
     operatorframework.io/os.linux: supported
-  name: silicom-sts-operator.v0.0.5
+  name: silicom-sts-operator.v0.0.6
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -477,7 +477,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/silicom/sts-operator:0.0.5
+                image: quay.io/silicom/sts-operator:0.0.6
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -609,7 +609,7 @@ spec:
     name: Silicom Ltd.
     url: http://www.silicom-usa.com
   replaces: silicom-sts-operator.v0.0.4
-  version: 0.0.5
+  version: 0.0.6
   relatedImages:
   - image: quay.io/silicom/gpsd@sha256:649e8a6c524920e1c564d8f797b8d64235b2527aa923f94bc9c7a0b7aba8ae7f
     name: gpsd

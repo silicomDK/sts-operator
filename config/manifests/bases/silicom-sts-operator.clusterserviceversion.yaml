@@ -5,7 +5,7 @@ metadata:
     capabilities: Basic Install
     categories: Drivers and plugins
     certified: "false"
-    containerImage: quay.io/silicom/sts-operator:0.0.5
+    containerImage: quay.io/silicom/sts-operator:0.0.6
     createdAt: 2021-11-17T10:21:24 CET
     description: |
       This Operator is a Kubernetes custom controller whose goal
@@ -19,7 +19,7 @@ metadata:
   labels:
     operatorframework.io/arch.amd64: supported
     operatorframework.io/os.linux: supported
-  name: silicom-sts-operator.v0.0.5
+  name: silicom-sts-operator.v0.0.6
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -107,4 +107,4 @@ spec:
   - image: quay.io/silicom/sts-plugin@sha256:9b3548764563ba6ee55b4f4a589b8dbf84f6c390a6ccd67f1a2827644bb6f637
     name: sts-plugin
   replaces: silicom-sts-operator.v0.0.4
-  version: 0.0.5
+  version: 0.0.6
