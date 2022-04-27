@@ -44,6 +44,8 @@ metadata:
   name: stsoperatorconfig
   namespace: sts-silicom
 spec:
+  images:
+  sro:
 
 ```
 
