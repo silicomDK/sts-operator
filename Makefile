@@ -140,13 +140,13 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: preflight
-PREFLIGHT = $(shell pwd)/bin/preflight
+PREFLIGHT = bin/preflight
 preflight: controller-gen kustomize bin
 	curl -sL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.1.0/preflight-linux-amd64 -o ./bin/preflight
 	chmod +x bin/preflight
 
 .PHONY: controller-gen
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+CONTROLLER_GEN = bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.1)
 
@@ -162,7 +162,7 @@ envtest: ## Download envtest-setup locally if necessary.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
 @[ -f $(1) ] || { \
-set -e ;\
+set -ex ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
@@ -305,10 +305,25 @@ opp-community-test: community-bundle
 		$(OPP) all $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)
 
 update-csv:
-	@echo $(IMAGE_REGISTRY)/sts-plugin@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/sts-plugin:$(VERSION) --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/tsyncd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION)  --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/gpsd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/grpc-tsyncd@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/tsync_extts@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/phc2sys@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ .Digest }}')
-	@echo $(IMAGE_REGISTRY)/ice-driver-src@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/ice-driver-src:1.8.3 --format '{{ .Digest }}')
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/gpsd:3.23.1)"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/sts-plugin:$(VERSION))"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) )"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION))"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsync_extts:1.0.0)"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/phc2sys:3.1.1)"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/ice-driver-src:1.8.3)"
+	@echo "  relatedImages:" > images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: gpsd" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: phc2sys" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION)  --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: tsyncd" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: grpc-tsyncd" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: tsync_extts" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(VERSION) --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: sts-plugin" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:1.8.3 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: ice-driver-src" >> images.yaml

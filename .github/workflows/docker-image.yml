@@ -1,0 +1,39 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+    - master
+    - 0.0.1
+    - 0.0.1-dev
+  pull_request:
+    branches:
+    - master
+    - 0.0.1
+    - 0.0.1-dev
+
+jobs:
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.17
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: controller-gen
+      run: make controller-gen
+
+    - name: Deps
+      run: make preflight controller-gen kustomize operator-sdk
+
+    - name: fmt
+      run: IS_CONTAINER=yes make fmt
+    
+    - name: build
+      run: make docker-build
