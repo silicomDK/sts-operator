@@ -42,7 +42,6 @@ apiVersion: sts.silicom.com/v1alpha1
 kind: StsOperatorConfig
 metadata:
   name: stsoperatorconfig
-  namespace: sts-silicom
 spec:
   images:
   sro:
