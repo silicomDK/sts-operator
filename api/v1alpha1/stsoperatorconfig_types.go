@@ -27,27 +27,19 @@ import (
 // StsOperatorConfigSpec defines the desired state of StsOperatorConfig
 type StsOperatorConfigSpec struct {
 
-	// +kubebuilder:default:int32=50051
-	// +kubebuilder:validation:Optional
-	GrpcSvcPort int `json:"grpcSvcPort,omitempty"`
+	// +kubebuilder:object:generate=true
+	Images StsImages `json:"images"`
 
-	// +kubebuilder:default:int32=2947
-	// +kubebuilder:validation:Optional
-	GpsSvcPort int `json:"gpsSvcPort,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Images StsImages `json:"images,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Sro SroCfg `json:"sro,omitempty"`
+	// +kubebuilder:object:generate=true
+	Sro SroCfg `json:"sro"`
 }
 
 type SroCfg struct {
 	// +kubebuilder:default:bool=true
 	// +kubebuilder:validation:Optional
-	Build bool `json:"build,omitempty"`
+	Build bool `json:"build"`
 
-	// +kubebuilder:default:string="1.7.16"
+	// +kubebuilder:default:string="1.8.3"
 	// +kubebuilder:validation:Optional
 	IceVersion string `json:"iceVersion,omitempty"`
 
@@ -58,7 +50,7 @@ type SroCfg struct {
 	// +kubebuilder:validation:Optional
 	Namespace string `json:"namespace,omitempty"`
 
-	// +kubebuilder:default:string="quay.io/silicom/ice-driver-src:1.7.16"
+	// +kubebuilder:default:string="quay.io/silicom/ice-driver-src:1.8.3"
 	// +kubebuilder:validation:Optional
 	SrcImage string `json:"srcImage,omitempty"`
 
@@ -74,22 +66,22 @@ type SroCfg struct {
 type StsImages struct {
 
 	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.1.1.1"
-	Tsyncd string `json:"tsyncd,omitempty"`
+	Tsyncd string `json:"tsyncd"`
 
 	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.1.1.1"
-	GrpcTsyncd string `json:"grpcTsyncd,omitempty"`
+	GrpcTsyncd string `json:"grpcTsyncd"`
 
-	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.2"
-	StsPlugin string `json:"stsPlugin,omitempty"`
+	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.5"
+	StsPlugin string `json:"stsPlugin"`
 
 	// +kubebuilder:default:string="quay.io/silicom/gpsd:3.23.1"
-	Gpsd string `json:"gpsd,omitempty"`
+	Gpsd string `json:"gpsd"`
 
 	// +kubebuilder:default:string="quay.io/silicom/tsync_extts:1.0.0"
-	TsyncExtts string `json:"tsyncExtts,omitempty"`
+	TsyncExtts string `json:"tsyncExtts"`
 
 	// +kubebuilder:default:string="quay.io/silicom/phc2sys:3.1.1"
-	Phc2sys string `json:"phc2sys,omitempty"`
+	Phc2sys string `json:"phc2sys"`
 }
 
 // StsOperatorConfigStatus defines the observed state of StsOperatorConfig
@@ -106,7 +98,7 @@ type StsOperatorConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   StsOperatorConfigSpec   `json:"spec,omitempty"`
+	Spec   StsOperatorConfigSpec   `json:"spec"`
 	Status StsOperatorConfigStatus `json:"status,omitempty"`
 }
 

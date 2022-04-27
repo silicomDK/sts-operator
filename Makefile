@@ -10,6 +10,9 @@ EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
 
 TSYNC_VERSION := 2.1.1.1
 
+MARKETPLACE_REMOTE_WORKFLOW  := https://marketplace.redhat.com/en-us/operators/silicom-sts-operator/pricing?utm_source=openshift_console
+MARKETPLACE_SUPPORT_WORKFLOW := https://marketplace.redhat.com/en-us/operators/silicom-sts-operator/support?utm_source=openshift_console
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -52,11 +55,11 @@ ENVTEST_K8S_VERSION = 1.21
 
 COMMUNITY_OPERATORS_GIT := https://github.com/silicomDK/community-operators-prod.git
 COMMUNITY_OPERATORS_DIR := community-operators-prod
-COMMUNITY_OPERATORS_VER := $(shell git branch --show-current)
-COMMUNITY_OPERATORS_OP  := silicom-sts-operator
+OPERATOR_VER			:= $(shell git branch --show-current)
+OPERATOR_NAME			:= silicom-sts-operator
 
-MARKETPLACE_DIR         := redhat-marketplace-operators
-MARKETPLACE_GIT         := https://github.com/silicomDK/redhat-marketplace-operators.git
+CERTIFIED_DIR         := certified-operators
+CERTIFIED_GIT         := https://github.com/silicomDK/certified-operators.git
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -71,7 +74,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-all: build
+all: build controller-gen preflight
 
 ##@ General
 
@@ -108,7 +111,8 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 ##@ Build
 
-build: generate fmt vet ## Build manager binary.
+.PHONY: build
+build: controller-gen operator-sdk preflight generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -135,11 +139,13 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+.PHONY: preflight
 PREFLIGHT = $(shell pwd)/bin/preflight
-preflight:
+preflight: controller-gen kustomize bin
 	curl -sL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.1.0/preflight-linux-amd64 -o ./bin/preflight
 	chmod +x bin/preflight
 
+.PHONY: controller-gen
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.1)
@@ -166,14 +172,15 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+.PHONY: operator-sdk
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
-operator-sdk:
+operator-sdk: bin
 	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.19.1/operator-sdk_linux_amd64 -o bin/operator-sdk
 	chmod +x bin/operator-sdk
 
-.PHONY: bundle
+.PHONY: all bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
-	- rm  bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
+#	- rm  bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	bin/operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | bin/operator-sdk generate bundle --overwrite -q --version $(VERSION) $(BUNDLE_METADATA_OPTS) $(EXTRA_SERVICE_ACCOUNTS)
@@ -181,6 +188,7 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	echo "LABEL com.redhat.openshift.versions=\"v4.8\"" >> bundle.Dockerfile
 	echo "LABEL com.redhat.delivery.operator.bundle=true" >> bundle.Dockerfile
 	cat images.yaml >> bundle/manifests/silicom-sts-operator.clusterserviceversion.yaml
+	rm bundle/manifests/*-config_v1_configmap.yaml
 	bin/operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
@@ -190,6 +198,9 @@ bundle-build: ## Build the bundle image.
 .PHONY: bundle-push
 bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
+
+bin:
+	mkdir bin
 
 .PHONY: opm
 OPM = ./bin/opm
@@ -257,19 +268,31 @@ community-clone:
 	git clone $(COMMUNITY_OPERATORS_GIT)
 
 community-bundle: bundle
-	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
-	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
-	rm $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
+	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
+	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
 
-marketplace-clone:
-	git clone $(MARKETPLACE_GIT)
+YQ := bin/yq
+yq:
+	curl -sL https://github.com/mikefarah/yq/releases/download/v4.24.5/yq_linux_amd64 -o $(YQ)
+	chmod +x $(YQ)
 
-marketplace-bundle: bundle
-	cp bundle.Dockerfile  $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
-	cp -av bundle/* $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/
-	rm $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)/manifests/*-config_v1_configmap.yaml
-	@echo "cert_project_id: 6266943761336b5931b9632c" > $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
-	@echo "organization: redhat-marketplace" >> $(MARKETPLACE_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/ci.yaml
+ACT := bin/act
+act:
+	curl https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
+
+
+certified-clone:
+	git clone $(CERTIFIED_GIT)
+
+certified-bundle: bundle
+	cp bundle.Dockerfile  $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
+	cp -av bundle/* $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
+	@echo "cert_project_id: 6266943761336b5931b9632c" > $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/ci.yaml
+	@echo "organization: redhat-marketplace" >> $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/ci.yaml
+	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/remote-workflow" = "$(MARKETPLACE_REMOTE_WORKFLOW)"' \
+		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
+	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "$(MARKETPLACE_SUPPORT_WORKFLOW)"' \
+		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 
 OPP = bin/opp.sh
 opp:
@@ -279,7 +302,7 @@ opp:
 opp-community-test: community-bundle
 	cd $(COMMUNITY_OPERATORS_DIR)
 	OPP_PRODUCTION_TYPE=ocp OPP_AUTO_PACKAGEMANIFEST_CLUSTER_VERSION_LABEL=1 \
-		$(OPP) all $(COMMUNITY_OPERATORS_DIR)/operators/$(COMMUNITY_OPERATORS_OP)/$(COMMUNITY_OPERATORS_VER)
+		$(OPP) all $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)
 
 update-csv:
 	@echo $(IMAGE_REGISTRY)/sts-plugin@$(shell skopeo inspect docker://$(IMAGE_REGISTRY)/sts-plugin:$(VERSION) --format '{{ .Digest }}')

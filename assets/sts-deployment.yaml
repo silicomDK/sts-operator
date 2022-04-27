@@ -150,15 +150,19 @@ spec:
     - protocol: TCP
       port: 50051
       targetPort: 50051
+      name: svc
     - protocol: TCP
       port: 50052
       targetPort: 50052
+      name: evt
     - protocol: TCP
       port: 50053
       targetPort: 50053
+      name: cfg
     - protocol: TCP
       port: 50054
       targetPort: 50054
+      name: sta
 
 ---
 
@@ -202,16 +206,6 @@ spec:
           capabilities:
             add:
             - CAP_SYS_ADMIN
-        # readinessProbe:
-        #   tcpSocket:
-        #     port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-        #   initialDelaySeconds: 300
-        #   periodSeconds: 60
-        # livenessProbe:
-        #   tcpSocket:
-        #     port: {{.StsOperatorConfig.Spec.GrpcSvcPort}}
-        #   initialDelaySeconds: 60
-        #   periodSeconds: 60
         ports:
         - containerPort: 50054
           name: {{.ServicePrefix}}-stat
@@ -301,7 +295,7 @@ spec:
             value: "false"
 {{end}}
           - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+            value: "2947"
         volumeMounts:
           - name: devfs
             mountPath: /dev
@@ -372,26 +366,16 @@ spec:
             value: "-g"
 {{end}}
           - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+            value: "2947"
       - image: {{.StsOperatorConfig.Spec.Images.Gpsd}}
         imagePullPolicy: Always
         name: {{.NodeName}}-gpsd
-        # readinessProbe:
-        #   tcpSocket:
-        #     port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-        #   initialDelaySeconds: 60
-        #   periodSeconds: 30
-        # livenessProbe:
-        #   tcpSocket:
-        #     port: {{.StsOperatorConfig.Spec.GpsSvcPort}}
-        #   initialDelaySeconds: 60
-        #   periodSeconds: 30
         ports:
-        - containerPort: {{.StsOperatorConfig.Spec.GpsSvcPort}}
+        - containerPort: 2947
           name: {{.ServicePrefix}}-gpsd
         env:
           - name: GPS_SVC_PORT
-            value: "{{.StsOperatorConfig.Spec.GpsSvcPort}}"
+            value: "2947"
         volumeMounts:
           - name: devfs
             mountPath: /dev

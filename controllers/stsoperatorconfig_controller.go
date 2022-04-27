@@ -76,11 +76,17 @@ func (r *StsOperatorConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if len(operatorCfgList.Items) > 1 {
-		reqLogger.Info("ERROR: There are 2 StsOperatorConfig found, please remove 1")
+		reqLogger.Info("ERROR: There are 2 StsOperatorConfigs found, please remove 1")
 		return ctrl.Result{}, err
 	}
 
-	operatorCfg := &operatorCfgList.Items[0]
+	operatorCfg := &stsv1alpha1.StsOperatorConfig{}
+	if err := r.Get(context.TODO(), client.ObjectKey{
+		Namespace: req.NamespacedName.Namespace,
+		Name:      req.NamespacedName.Name,
+	}, operatorCfg); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	err = r.DeployNfd(operatorCfg)
 	if err != nil {
@@ -410,11 +416,7 @@ func (r *StsOperatorConfigReconciler) DeployPlugin(operatorCfg *stsv1alpha1.StsO
 							Env: []v1.EnvVar{
 								{
 									Name:  "GPS_SVC_PORT",
-									Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GpsSvcPort),
-								},
-								{
-									Name:  "GRPC_SVC_PORT",
-									Value: fmt.Sprintf("\"%d\"", operatorCfg.Spec.GrpcSvcPort),
+									Value: "2947",
 								},
 								{
 									Name: "NODE_NAME",
