@@ -582,9 +582,9 @@ spec:
         serviceAccountName: sts-tsync
     strategy: deployment
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
@@ -621,7 +621,7 @@ spec:
     name: grpc-tsyncd
   - image: quay.io/silicom/tsync_extts@sha256:be6a5950a5fdc6fdf8015767901856bf173d01bdc803be7141e4f9795ab1478a
     name: tsync_extts
-  - image: quay.io/silicom/sts-plugin@sha256:3a66534fdde248d8a5398e909db57090bdd950b001e71ea0e6dec9e14a02e8da
+  - image: quay.io/silicom/sts-plugin@sha256:44339fd400d46d9dddb02c2da47c6f9f96ad2605a5c6de8a7dce2f8c3da3bb57
     name: sts-plugin
   - image: quay.io/silicom/ice-driver-src@sha256:41148417a6cfef1478f7254485742d6456d3f2c6874cb3213e6ae1834c5ae4dd
     name: ice-driver-src
