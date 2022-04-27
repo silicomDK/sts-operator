@@ -106,5 +106,5 @@ spec:
     name: tsync_extts
   - image: quay.io/silicom/sts-plugin@sha256:9b3548764563ba6ee55b4f4a589b8dbf84f6c390a6ccd67f1a2827644bb6f637
     name: sts-plugin
-  replaces: silicom-sts-operator.v0.0.4
+  replaces: silicom-sts-operator.v0.0.5
   version: 0.0.6

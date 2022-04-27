@@ -243,10 +243,49 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+.PHONY: preflight-all
+
+preflight-all: preflight-tsyncd preflight-operator preflight-plugin preflight-phc2sys preflight-plugin preflight-tsync-extts preflight-gpsd preflight-grpc-tsyncd
+
 preflight-plugin:
 	echo '{}' > config.json
 	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=62679ca7d634ea6b75a3af92 \
+		--submit -d config.json
+
+preflight-tsync-extts:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=6218d3eddcb47fcb3e58558e \
+		--submit -d config.json
+
+preflight-gpsd:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=622b5495f8469c36ac475618 \
+		--submit -d config.json
+
+preflight-tsyncd:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=6218dc7622ee06da01c10bb5 \
+		--submit -d config.json
+
+preflight-grpc-tsyncd:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=62651e90e6f5b76c831ba804 \
+		--submit -d config.json
+
+preflight-phc2sys:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=6265110a59837e5a2f051c39 \
 		--submit -d config.json
 
 preflight-operator:
