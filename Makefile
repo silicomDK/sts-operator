@@ -9,9 +9,19 @@ IMG_VERSION ?= $(shell git branch --show-current)
 EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
 
 TSYNC_VERSION := 2.1.1.1
+ICE_VERSION = 1.8.8
 
 MARKETPLACE_REMOTE_WORKFLOW  := https://marketplace.redhat.com/en-us/operators/silicom-sts-operator/pricing?utm_source=openshift_console
 MARKETPLACE_SUPPORT_WORKFLOW := https://marketplace.redhat.com/en-us/operators/silicom-sts-operator/support?utm_source=openshift_console
+
+PREFLIGHT_TARGETS := preflight-tsyncd
+PREFLIGHT_TARGETS += preflight-operator
+PREFLIGHT_TARGETS += preflight-plugin
+PREFLIGHT_TARGETS += preflight-phc2sys
+PREFLIGHT_TARGETS += preflight-plugin
+PREFLIGHT_TARGETS += preflight-tsync-extts
+PREFLIGHT_TARGETS += preflight-gpsd
+PREFLIGHT_TARGETS += preflight-grpc-tsyncd
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -53,8 +63,8 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
 
-COMMUNITY_OPERATORS_GIT := https://github.com/silicomDK/community-operators-prod.git
-COMMUNITY_OPERATORS_DIR := community-operators-prod
+COMMUNITY_PROD_OPERATORS_GIT := https://github.com/silicomDK/community-operators-prod.git
+COMMUNITY_PROD_OPERATORS_DIR := community-operators-prod
 OPERATOR_VER			:= $(shell git branch --show-current)
 OPERATOR_NAME			:= silicom-sts-operator
 
@@ -243,10 +253,8 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
-.PHONY: preflight-all
-
-preflight-all: preflight-tsyncd preflight-operator preflight-plugin preflight-phc2sys preflight-plugin preflight-tsync-extts preflight-gpsd preflight-grpc-tsyncd
-
+.PHONY: preflight-all $(PREFLIGHT_TARGETS)
+preflight-all: $(PREFLIGHT_TARGETS)
 preflight-plugin:
 	echo '{}' > config.json
 	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
@@ -295,8 +303,17 @@ preflight-operator:
 		--certification-project-id=6268270b61336b5931b96337 \
 		--submit -d config.json
 
+preflight-ice-driver:
+	echo '{}' > config.json
+	$(PREFLIGHT) check container \
+		$(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		--certification-project-id=62669911d634ea6b75a3af8b \
+		--submit -d config.json
+
 plugin:
-	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --build-arg STS_VERSION=$(VERSION) --build-arg GRPC_TSYNC=$(IMAGE_REGISTRY)/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
+	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) \
+		--build-arg STS_VERSION=$(VERSION) \
+		--build-arg GRPC_TSYNC=$(IMAGE_REGISTRY)/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
 
 plugin-push:
 	docker push $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION)
@@ -304,11 +321,11 @@ plugin-push:
 bundle-all: generate manifests bundle bundle-build
 
 community-clone:
-	git clone $(COMMUNITY_OPERATORS_GIT)
+	git clone $(COMMUNITY_PROD_OPERATORS_GIT)
 
 community-bundle: bundle
-	cp bundle.Dockerfile  $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
-	cp -av bundle/* $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
+	cp bundle.Dockerfile  $(COMMUNITY_PROD_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
+	cp -av bundle/* $(COMMUNITY_PROD_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
 
 YQ := bin/yq
 yq:
@@ -343,14 +360,14 @@ opp-community-test: community-bundle
 	OPP_PRODUCTION_TYPE=ocp OPP_AUTO_PACKAGEMANIFEST_CLUSTER_VERSION_LABEL=1 \
 		$(OPP) all $(COMMUNITY_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)
 
-update-csv:
+update-images:
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/gpsd:3.23.1)"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/sts-plugin:$(VERSION))"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) )"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION))"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsync_extts:1.0.0)"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/phc2sys:3.1.1)"
-	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/ice-driver-src:1.8.3)"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION))"
 	@echo "  relatedImages:" > images.yaml
 	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
 	@echo "    name: gpsd" >> images.yaml
@@ -364,5 +381,5 @@ update-csv:
 	@echo "    name: tsync_extts" >> images.yaml
 	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(VERSION) --format '{{ index .RepoDigests 0 }}')" >> images.yaml
 	@echo "    name: sts-plugin" >> images.yaml
-	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:1.8.3 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION) --format '{{ index .RepoDigests 0 }}')" >> images.yaml
 	@echo "    name: ice-driver-src" >> images.yaml
