@@ -11,5 +11,7 @@
     name: tsync_extts
   - image: quay.io/silicom/sts-plugin@sha256:44339fd400d46d9dddb02c2da47c6f9f96ad2605a5c6de8a7dce2f8c3da3bb57
     name: sts-plugin
-  - image: quay.io/silicom/ice-driver-src@sha256:ca728f648769d31501cdedda92554bcfa890754405b0b06d41629cea47707da8
+  - image: quay.io/silicom/ice-driver-src@sha256:6bb07b26f669d9fe853a06a0262c5ee033fbb26bab202d84572b099ef852751c
     name: ice-driver-src
+  - image: quay.io/silicom/sts-operator@sha256:a79a5cf99f5238ee08c509efe0b6142197ef0b79a6b209c125d9f7b7235758e5
+    name: sts-operator
