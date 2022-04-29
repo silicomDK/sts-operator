@@ -349,9 +349,9 @@ certified-bundle: bundle
 		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "$(MARKETPLACE_SUPPORT_WORKFLOW)"' \
 		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
-	$(YQ) -i \
-		'(.spec.install.spec.deployments[].spec.template.spec.containers[]) | select(.image == "quay.io/silicom/sts-operator:$(OPERATOR_VER)") | (.image = "$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-operator") | .image ' images.yaml)")' \
+	sed -i 's/sts-operator:$(OPERATOR_VER)/sts-operator@$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-operator") | .image ' images.yaml | cut -d '@' -f 2))/' \
 			 $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
+	sed -i '/replaces:/d' $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 
 OPP = bin/opp.sh
 opp:
@@ -372,6 +372,7 @@ update-images:
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/phc2sys:3.1.1)"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION))"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/sts-operator:$(OPERATOR_VER))"
+	@echo "$(shell docker pull -q gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0)"
 	@echo "  relatedImages:" > images.yaml
 	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
 	@echo "    name: gpsd" >> images.yaml
@@ -389,3 +390,5 @@ update-images:
 	@echo "    name: ice-driver-src" >> images.yaml
 	@echo "  - image: $(shell docker inspect $(IMAGE_REGISTRY)/sts-operator:$(OPERATOR_VER) --format '{{ index .RepoDigests 0 }}')" >> images.yaml
 	@echo "    name: sts-operator" >> images.yaml
+	@echo "  - image: $(shell docker inspect gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0 --format '{{ index .RepoDigests 0 }}')" >> images.yaml
+	@echo "    name: kube-rbac-proxy" >> images.yaml
