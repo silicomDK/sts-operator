@@ -245,7 +245,7 @@ endif
 # This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
 # https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
 .PHONY: catalog-build
-catalog-build: opm ## Build a catalog image.
+catalog-build: opm bundle ## Build a catalog image.
 	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
 
 # Push the catalog image.
@@ -297,11 +297,11 @@ preflight-phc2sys:
 		--submit -d config.json
 
 preflight-operator:
+	$(which operator-sdk)
 	echo '{}' > config.json
-	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/sts-operator:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
-		--certification-project-id=6268270b61336b5931b96337 \
-		--submit -d config.json
+	PFLT_INDEXIMAGE=$(IMAGE_REGISTRY)/sts-operator-catalog:$(IMG_VERSION) \
+	PFLT_LOGLEVEL=trace $(PREFLIGHT) check operator  \
+		$(shell docker inspect $(IMAGE_REGISTRY)/sts-operator-bundle:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
 
 preflight-ice-driver:
 	echo '{}' > config.json

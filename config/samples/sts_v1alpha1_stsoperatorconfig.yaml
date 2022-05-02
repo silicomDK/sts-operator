@@ -4,5 +4,5 @@ metadata:
   name: sts-operator-config
   namespace: openshift-operators
 spec:
-  images:
-  sro:
+  images: {}
+  sro: {}

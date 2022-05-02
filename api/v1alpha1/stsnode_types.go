@@ -42,6 +42,7 @@ type GPSStatus struct {
 type StsNodeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Dummy int `json:"dummy"`
 }
 
 type StsNodeInterfaceStatus struct {

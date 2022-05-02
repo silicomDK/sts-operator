@@ -2,7 +2,7 @@ apiVersion: sts.silicom.com/v1alpha1
 kind: StsNode
 metadata:
   name: worker2
-spec:
+spec: {}
 status:
   ethInterfaces:
   - ethName: enp2s0f0

@@ -3,7 +3,6 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     capabilities: Basic Install
-    categories: Drivers and plugins
     certified: "false"
     containerImage: quay.io/silicom/sts-operator@sha256:a79a5cf99f5238ee08c509efe0b6142197ef0b79a6b209c125d9f7b7235758e5
     createdAt: 2021-11-17T10:21:24 CET
