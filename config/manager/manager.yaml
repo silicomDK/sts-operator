@@ -61,5 +61,7 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
