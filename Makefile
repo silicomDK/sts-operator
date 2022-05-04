@@ -18,10 +18,13 @@ PREFLIGHT_TARGETS := preflight-tsyncd
 PREFLIGHT_TARGETS += preflight-operator
 PREFLIGHT_TARGETS += preflight-plugin
 PREFLIGHT_TARGETS += preflight-phc2sys
-PREFLIGHT_TARGETS += preflight-plugin
 PREFLIGHT_TARGETS += preflight-tsync-extts
 PREFLIGHT_TARGETS += preflight-gpsd
 PREFLIGHT_TARGETS += preflight-grpc-tsyncd
+
+export PFLT_LOGLEVEL=debug
+export PFLT_INDEXIMAGE=$(IMAGE_REGISTRY)/sts-operator-catalog:$(IMG_VERSION)
+export PFLT_DOCKERCONFIG=$(shell pwd)/docker.json
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -256,59 +259,50 @@ catalog-push: ## Push a catalog image.
 .PHONY: preflight-all $(PREFLIGHT_TARGETS)
 preflight-all: $(PREFLIGHT_TARGETS)
 preflight-plugin:
-	echo '{}' > config.json
-	$(PREFLIGHT) check container $(shell docker inspect $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}') \
-		--certification-project-id=62679ca7d634ea6b75a3af92 \
-		--submit -d config.json
+	$(PREFLIGHT) check container $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) \
+		--certification-project-id=627233b4d3d88855cdc646f5 \
+		--submit
 
 preflight-tsync-extts:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=6218d3eddcb47fcb3e58558e \
-		--submit -d config.json
+		--submit
 
 preflight-gpsd:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=622b5495f8469c36ac475618 \
-		--submit -d config.json
+		--submit
 
 preflight-tsyncd:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=6218dc7622ee06da01c10bb5 \
-		--submit -d config.json
+		--submit
 
 preflight-grpc-tsyncd:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=62651e90e6f5b76c831ba804 \
-		--submit -d config.json
+		--submit
 
 preflight-phc2sys:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=6265110a59837e5a2f051c39 \
-		--submit -d config.json
+		--submit
 
 preflight-operator:
-	$(which operator-sdk)
-	echo '{}' > config.json
-	PFLT_INDEXIMAGE=$(IMAGE_REGISTRY)/sts-operator-catalog:$(IMG_VERSION) \
-	PFLT_LOGLEVEL=trace $(PREFLIGHT) check operator  \
+	which operator-sdk
+	$(PREFLIGHT) check operator  \
 		$(shell docker inspect $(IMAGE_REGISTRY)/sts-operator-bundle:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
 
 preflight-ice-driver:
-	echo '{}' > config.json
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION) --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=62669911d634ea6b75a3af8b \
-		--submit -d config.json
+		--submit
 
 plugin:
 	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) \
