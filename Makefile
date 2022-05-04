@@ -315,7 +315,7 @@ preflight-ice-driver:
 plugin:
 	docker build . -t $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) \
 		--build-arg STS_VERSION=$(VERSION) \
-		--build-arg GRPC_TSYNC=$(IMAGE_REGISTRY)/grpc-tsyncd:2.1.1.1 -f Dockerfile.plugin
+		-f Dockerfile.plugin
 
 plugin-push:
 	docker push $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION)
