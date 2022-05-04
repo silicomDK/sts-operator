@@ -193,7 +193,7 @@ func main() {
 	stsNode.Namespace = namespace
 
 	gpsSvcPort, _ := strconv.Atoi(os.Getenv("GPS_SVC_PORT"))
-	gpsSvcStr := fmt.Sprintf("%s:%d", nodeName, gpsSvcPort)
+	gpsSvcStr := fmt.Sprintf("%.8s-gpsd:%d", nodeName, gpsSvcPort)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
