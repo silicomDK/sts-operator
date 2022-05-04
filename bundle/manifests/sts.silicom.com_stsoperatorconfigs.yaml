@@ -54,13 +54,6 @@ spec:
                   tsyncd:
                     default: quay.io/silicom/tsyncd:2.1.1.1
                     type: string
-                required:
-                - gpsd
-                - grpcTsyncd
-                - phc2sys
-                - stsPlugin
-                - tsyncExtts
-                - tsyncd
                 type: object
               sro:
                 properties:
@@ -121,9 +114,6 @@ spec:
                     default: 3000
                     type: integer
                 type: object
-            required:
-            - images
-            - sro
             type: object
           status:
             description: StsOperatorConfigStatus defines the observed state of StsOperatorConfig

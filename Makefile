@@ -5,6 +5,7 @@
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= $(shell git branch --show-current)
 IMG_VERSION ?= $(shell git branch --show-current)
+OPERATOR_VER := $(shell git branch --show-current)
 
 EXTRA_SERVICE_ACCOUNTS := --extra-service-accounts="sts-plugin,sts-tsync"
 
@@ -21,6 +22,8 @@ PREFLIGHT_TARGETS += preflight-phc2sys
 PREFLIGHT_TARGETS += preflight-tsync-extts
 PREFLIGHT_TARGETS += preflight-gpsd
 PREFLIGHT_TARGETS += preflight-grpc-tsyncd
+
+.PHONY: $(PREFLIGHT_TARGETS)
 
 export PFLT_LOGLEVEL=debug
 export PFLT_INDEXIMAGE=$(IMAGE_REGISTRY)/sts-operator-catalog:$(IMG_VERSION)
@@ -68,7 +71,6 @@ ENVTEST_K8S_VERSION = 1.21
 
 COMMUNITY_PROD_OPERATORS_GIT := https://github.com/silicomDK/community-operators-prod.git
 COMMUNITY_PROD_OPERATORS_DIR := community-operators-prod
-OPERATOR_VER			:= $(shell git branch --show-current)
 OPERATOR_NAME			:= silicom-sts-operator
 
 CERTIFIED_DIR         := certified-operators
@@ -87,7 +89,9 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-all: build controller-gen preflight
+all: build controller-gen $(PREFLIGHT)
+
+$(PREFLIGHT_TARGETS): $(PREFLIGHT)
 
 ##@ General
 
@@ -139,6 +143,15 @@ docker-push: ## Push docker image with the manager.
 
 ##@ Deployment
 
+YQ := bin/yq
+yq: # Install yq if necessary to parse and manipulate yaml files.
+	curl -sL https://github.com/mikefarah/yq/releases/download/v4.24.5/yq_linux_amd64 -o $(YQ)
+	chmod +x $(YQ)
+
+ACT := bin/act
+act: # Install act if necessary to locally test github CI/CD.
+	curl https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
+
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
@@ -152,9 +165,8 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-.PHONY: preflight
 PREFLIGHT = bin/preflight
-preflight: controller-gen kustomize bin
+preflight: controller-gen kustomize  ## Download opm locally if necessary.
 	curl -sL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.1.0/preflight-linux-amd64 -o ./bin/preflight
 	chmod +x bin/preflight
 
@@ -256,51 +268,60 @@ catalog-build: opm bundle ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+##@ Openshift preflight
+
 .PHONY: preflight-all $(PREFLIGHT_TARGETS)
 preflight-all: $(PREFLIGHT_TARGETS)
-preflight-plugin:
+preflight-plugin: ## Check sts-plugin with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-plugin") | .image ' images.yaml) \
 		--certification-project-id=627233b4d3d88855cdc646f5 \
 		--docker-config=$(shell pwd)/config.json \
 		--submit
 
-preflight-tsync-extts:
+preflight-tsync-extts: ## Check tsync-extts with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "tsync_extts") | .image ' images.yaml) \
 		--certification-project-id=6218d3eddcb47fcb3e58558e \
 		--docker-config=$(shell pwd)/config.json \
 		--submit
 
-preflight-gpsd:
+preflight-gpsd: ## Check gpsd with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "gpsd") | .image ' images.yaml) \
 		--certification-project-id=622b5495f8469c36ac475618 \
 		--docker-config=$(shell pwd)/config.json \
 		--submit
 
-preflight-tsyncd:
+preflight-tsyncd: ## Check tsyncd with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "tsyncd") | .image ' images.yaml) \
 		--certification-project-id=6218dc7622ee06da01c10bb5 \
 		--docker-config=$(shell pwd)/config.json \
 		--submit
 
-preflight-grpc-tsyncd:
+preflight-grpc-tsyncd: ## Check grpc-tsyncd with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "grpc-tsyncd") | .image ' images.yaml) \
 		--certification-project-id=62651e90e6f5b76c831ba804 \
 		--docker-config=$(shell pwd)/config.json \
 		--submit
 
-preflight-phc2sys:
+preflight-phc2sys: ## Check phc2sys with preflight and upload results.
 	$(PREFLIGHT) check container \
 		$(shell $(YQ) '.relatedImages.[] | select(.name == "phc2sys") | .image ' images.yaml) \
 		--certification-project-id 6265110a59837e5a2f051c39 \
 		--docker-config $(shell pwd)/config.json \
 		--submit
 
-preflight-operator:
+preflight-operator-image: ## Check sts-operator with preflight and upload results.
+	$(PREFLIGHT) check container \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-operator") | .image ' images.yaml) \
+		--certification-project-id 6268270b61336b5931b96337 \
+		--docker-config $(shell pwd)/config.json \
+		--submit
+
+preflight-operator-bundle: ## Check operator-bundle with preflight and upload results.
 	which operator-sdk
 	$(PREFLIGHT) check operator  \
 		$(shell docker inspect $(IMAGE_REGISTRY)/sts-operator-bundle:$(IMG_VERSION) --format '{{ index .RepoDigests 0 }}')
@@ -328,15 +349,6 @@ community-clone:
 community-bundle: bundle
 	cp bundle.Dockerfile  $(COMMUNITY_PROD_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
 	cp -av bundle/* $(COMMUNITY_PROD_OPERATORS_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
-
-YQ := bin/yq
-yq:
-	curl -sL https://github.com/mikefarah/yq/releases/download/v4.24.5/yq_linux_amd64 -o $(YQ)
-	chmod +x $(YQ)
-
-ACT := bin/act
-act:
-	curl https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
 
 
 certified-clone:
@@ -367,7 +379,7 @@ opp-community-test: community-bundle
 
 update-images:
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/gpsd:3.23.1)"
-	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/sts-plugin:$(VERSION))"
+	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/sts-plugin:$(OPERATOR_VER))"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) )"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION))"
 	@echo "$(shell docker pull -q $(IMAGE_REGISTRY)/tsync_extts:1.0.0)"

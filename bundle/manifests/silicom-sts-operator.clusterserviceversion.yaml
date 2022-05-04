@@ -500,6 +500,8 @@ spec:
                     memory: 20Mi
                 securityContext:
                   allowPrivilegeEscalation: true
+              nodeSelector:
+                node-role.kubernetes.io/master: ""
               securityContext:
                 runAsNonRoot: false
               serviceAccountName: sts-controller-manager
@@ -620,7 +622,7 @@ spec:
     name: grpc-tsyncd
   - image: quay.io/silicom/tsync_extts@sha256:be6a5950a5fdc6fdf8015767901856bf173d01bdc803be7141e4f9795ab1478a
     name: tsync_extts
-  - image: quay.io/silicom/sts-plugin@sha256:44339fd400d46d9dddb02c2da47c6f9f96ad2605a5c6de8a7dce2f8c3da3bb57
+  - image: quay.io/silicom/sts-plugin@sha256:86562c40a07ef8dc198bd53562ae332d89d9ea5d45b8e8aa9d3685bc6f7ee60f
     name: sts-plugin
   - image: quay.io/silicom/ice-driver-src@sha256:6bb07b26f669d9fe853a06a0262c5ee033fbb26bab202d84572b099ef852751c
     name: ice-driver-src

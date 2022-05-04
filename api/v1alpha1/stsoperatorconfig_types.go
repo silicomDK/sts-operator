@@ -28,9 +28,11 @@ import (
 type StsOperatorConfigSpec struct {
 
 	// +kubebuilder:object:generate=true
+	// +kubebuilder:validation:Optional
 	Images StsImages `json:"images"`
 
 	// +kubebuilder:object:generate=true
+	// +kubebuilder:validation:Optional
 	Sro SroCfg `json:"sro"`
 }
 
@@ -66,21 +68,27 @@ type SroCfg struct {
 type StsImages struct {
 
 	// +kubebuilder:default:string="quay.io/silicom/tsyncd:2.1.1.1"
+	// +kubebuilder:validation:Optional
 	Tsyncd string `json:"tsyncd"`
 
 	// +kubebuilder:default:string="quay.io/silicom/grpc-tsyncd:2.1.1.1"
+	// +kubebuilder:validation:Optional
 	GrpcTsyncd string `json:"grpcTsyncd"`
 
 	// +kubebuilder:default:string="quay.io/silicom/sts-plugin:0.0.6"
+	// +kubebuilder:validation:Optional
 	StsPlugin string `json:"stsPlugin"`
 
 	// +kubebuilder:default:string="quay.io/silicom/gpsd:3.23.1"
+	// +kubebuilder:validation:Optional
 	Gpsd string `json:"gpsd"`
 
 	// +kubebuilder:default:string="quay.io/silicom/tsync_extts:1.0.0"
+	// +kubebuilder:validation:Optional
 	TsyncExtts string `json:"tsyncExtts"`
 
 	// +kubebuilder:default:string="quay.io/silicom/phc2sys:3.1.1"
+	// +kubebuilder:validation:Optional
 	Phc2sys string `json:"phc2sys"`
 }
 
