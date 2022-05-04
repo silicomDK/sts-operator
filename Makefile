@@ -259,38 +259,45 @@ catalog-push: ## Push a catalog image.
 .PHONY: preflight-all $(PREFLIGHT_TARGETS)
 preflight-all: $(PREFLIGHT_TARGETS)
 preflight-plugin:
-	$(PREFLIGHT) check container $(IMAGE_REGISTRY)/sts-plugin:$(IMG_VERSION) \
+	$(PREFLIGHT) check container \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-plugin") | .image ' images.yaml) \
 		--certification-project-id=627233b4d3d88855cdc646f5 \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 preflight-tsync-extts:
 	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/tsync_extts:1.0.0 --format '{{ index .RepoDigests 0 }}') \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "tsync_extts") | .image ' images.yaml) \
 		--certification-project-id=6218d3eddcb47fcb3e58558e \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 preflight-gpsd:
 	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/gpsd:3.23.1 --format '{{ index .RepoDigests 0 }}') \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "gpsd") | .image ' images.yaml) \
 		--certification-project-id=622b5495f8469c36ac475618 \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 preflight-tsyncd:
 	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "tsyncd") | .image ' images.yaml) \
 		--certification-project-id=6218dc7622ee06da01c10bb5 \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 preflight-grpc-tsyncd:
 	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/grpc-tsyncd:$(TSYNC_VERSION) --format '{{ index .RepoDigests 0 }}') \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "grpc-tsyncd") | .image ' images.yaml) \
 		--certification-project-id=62651e90e6f5b76c831ba804 \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 preflight-phc2sys:
 	$(PREFLIGHT) check container \
-		$(shell docker inspect $(IMAGE_REGISTRY)/phc2sys:3.1.1 --format '{{ index .RepoDigests 0 }}') \
-		--certification-project-id=6265110a59837e5a2f051c39 \
+		$(shell $(YQ) '.relatedImages.[] | select(.name == "phc2sys") | .image ' images.yaml) \
+		--certification-project-id 6265110a59837e5a2f051c39 \
+		--docker-config $(shell pwd)/config.json \
 		--submit
 
 preflight-operator:
@@ -302,6 +309,7 @@ preflight-ice-driver:
 	$(PREFLIGHT) check container \
 		$(shell docker inspect $(IMAGE_REGISTRY)/ice-driver-src:$(ICE_VERSION) --format '{{ index .RepoDigests 0 }}') \
 		--certification-project-id=62669911d634ea6b75a3af8b \
+		--docker-config=$(shell pwd)/config.json \
 		--submit
 
 plugin:
