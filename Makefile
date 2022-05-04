@@ -358,7 +358,7 @@ certified-bundle: bundle
 	cp bundle.Dockerfile  $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
 	cp -av bundle/* $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/
 	@echo "cert_project_id: 6266943761336b5931b9632c" > $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/ci.yaml
-	@echo "organization: redhat-marketplace" >> $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/ci.yaml
+#	@echo "organization: redhat-marketplace" >> $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/ci.yaml
 	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/remote-workflow" = "$(MARKETPLACE_REMOTE_WORKFLOW)"' \
 		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "$(MARKETPLACE_SUPPORT_WORKFLOW)"' \
