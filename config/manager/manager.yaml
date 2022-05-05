@@ -63,5 +63,8 @@ spec:
             memory: 20Mi
       nodeSelector:
         node-role.kubernetes.io/master: ""
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
