@@ -506,6 +506,9 @@ spec:
                 runAsNonRoot: false
               serviceAccountName: sts-controller-manager
               terminationGracePeriodSeconds: 10
+              tolerations:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
       permissions:
       - rules:
         - apiGroups:

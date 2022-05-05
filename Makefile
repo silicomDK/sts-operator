@@ -363,7 +363,7 @@ certified-bundle: bundle
 		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	$(YQ) -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "$(MARKETPLACE_SUPPORT_WORKFLOW)"' \
 		$(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
-	sed -i 's/sts-operator:$(OPERATOR_VER)/sts-operator@$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-operator") | .image ' images.yaml | cut -d '@' -f 2))/' \
+	sed -i 's/sts-operator:$(OPERATOR_VER)/sts-operator@$(shell $(YQ) '.relatedImages.[] | select(.name == "sts-operator") | .image ' images.yaml | cut -d '@' -f 2)/' \
 			 $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 	sed -i '/replaces:/d' $(CERTIFIED_DIR)/operators/$(OPERATOR_NAME)/$(OPERATOR_VER)/manifests/silicom-sts-operator.clusterserviceversion.yaml
 
